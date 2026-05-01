@@ -417,12 +417,16 @@ class _RecommendedCard extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(plan.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
                                 ?.copyWith(fontWeight: FontWeight.w800)),
                         const SizedBox(height: 4),
                         Text(plan.subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: Theme.of(context)
                                 .textTheme
                                 .bodySmall
