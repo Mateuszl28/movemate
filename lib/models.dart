@@ -2,6 +2,76 @@ import 'package:flutter/material.dart';
 
 enum ExerciseCategory { stretch, mobility, breath, cardio }
 
+enum BodyArea {
+  neck,
+  shoulders,
+  chest,
+  back,
+  core,
+  hips,
+  legs,
+  ankles,
+  wrists,
+  breath,
+  fullBody,
+}
+
+extension BodyAreaX on BodyArea {
+  String get label {
+    switch (this) {
+      case BodyArea.neck:
+        return 'Neck';
+      case BodyArea.shoulders:
+        return 'Shoulders';
+      case BodyArea.chest:
+        return 'Chest';
+      case BodyArea.back:
+        return 'Back';
+      case BodyArea.core:
+        return 'Core';
+      case BodyArea.hips:
+        return 'Hips';
+      case BodyArea.legs:
+        return 'Legs';
+      case BodyArea.ankles:
+        return 'Ankles';
+      case BodyArea.wrists:
+        return 'Wrists';
+      case BodyArea.breath:
+        return 'Breath';
+      case BodyArea.fullBody:
+        return 'Full body';
+    }
+  }
+
+  String get emoji {
+    switch (this) {
+      case BodyArea.neck:
+        return '🦒';
+      case BodyArea.shoulders:
+        return '🤷';
+      case BodyArea.chest:
+        return '💪';
+      case BodyArea.back:
+        return '🧍';
+      case BodyArea.core:
+        return '🧘';
+      case BodyArea.hips:
+        return '🪩';
+      case BodyArea.legs:
+        return '🦵';
+      case BodyArea.ankles:
+        return '🦶';
+      case BodyArea.wrists:
+        return '✋';
+      case BodyArea.breath:
+        return '🫁';
+      case BodyArea.fullBody:
+        return '🤸';
+    }
+  }
+}
+
 extension ExerciseCategoryX on ExerciseCategory {
   String get label {
     switch (this) {
@@ -76,6 +146,7 @@ class Exercise {
   final int seconds;
   final ExerciseCategory category;
   final String emoji;
+  final List<BodyArea> bodyAreas;
 
   const Exercise({
     required this.id,
@@ -84,6 +155,7 @@ class Exercise {
     required this.seconds,
     required this.category,
     required this.emoji,
+    this.bodyAreas = const [],
   });
 }
 
@@ -118,6 +190,7 @@ class SessionRecord {
   final int seconds;
   final int? moodBefore; // 1..5
   final int? moodAfter;  // 1..5
+  final String? note;
 
   SessionRecord({
     required this.completedAt,
@@ -126,6 +199,7 @@ class SessionRecord {
     required this.seconds,
     this.moodBefore,
     this.moodAfter,
+    this.note,
   });
 
   int? get moodDelta {
@@ -140,6 +214,7 @@ class SessionRecord {
         's': seconds,
         if (moodBefore != null) 'mb': moodBefore,
         if (moodAfter != null) 'ma': moodAfter,
+        if (note != null && note!.isNotEmpty) 'n': note,
       };
 
   factory SessionRecord.fromJson(Map<String, dynamic> json) => SessionRecord(
@@ -149,5 +224,6 @@ class SessionRecord {
         seconds: json['s'] as int,
         moodBefore: json['mb'] as int?,
         moodAfter: json['ma'] as int?,
+        note: json['n'] as String?,
       );
 }

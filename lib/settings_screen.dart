@@ -18,6 +18,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late ActivityProfile _profile;
   late int _reminderHours;
   late int _dailyGoal;
+  late int _themeMode;
 
   @override
   void initState() {
@@ -25,6 +26,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _profile = widget.storage.profile;
     _reminderHours = widget.storage.reminderIntervalHours;
     _dailyGoal = widget.storage.dailyGoalMinutes;
+    _themeMode = widget.storage.themeModeIndex;
   }
 
   @override
@@ -122,6 +124,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   .onSurfaceVariant),
                     ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _Section(
+              title: 'Appearance',
+              child: Column(
+                children: [
+                  for (final entry in const [
+                    (0, 'Auto', 'Match the system theme'),
+                    (1, 'Light', 'Bright surfaces, dark text'),
+                    (2, 'Dark', 'Dim surfaces, light text'),
+                  ])
+                    RadioListTile<int>(
+                      value: entry.$1,
+                      groupValue: _themeMode,
+                      onChanged: (v) async {
+                        if (v == null) return;
+                        setState(() => _themeMode = v);
+                        await widget.storage.setThemeModeIndex(v);
+                        widget.onChanged();
+                      },
+                      title: Text(entry.$2,
+                          style: const TextStyle(fontWeight: FontWeight.w700)),
+                      subtitle: Text(entry.$3),
+                      contentPadding: EdgeInsets.zero,
+                    ),
                 ],
               ),
             ),

@@ -10,6 +10,7 @@ class ExerciseLibrary {
       seconds: 40,
       category: ExerciseCategory.stretch,
       emoji: '🙆',
+      bodyAreas: [BodyArea.neck, BodyArea.shoulders],
     ),
     Exercise(
       id: 'shoulder_rolls',
@@ -18,6 +19,7 @@ class ExerciseLibrary {
       seconds: 30,
       category: ExerciseCategory.stretch,
       emoji: '🤸',
+      bodyAreas: [BodyArea.shoulders, BodyArea.back],
     ),
     Exercise(
       id: 'chest_opener',
@@ -26,6 +28,7 @@ class ExerciseLibrary {
       seconds: 45,
       category: ExerciseCategory.stretch,
       emoji: '🧘',
+      bodyAreas: [BodyArea.chest, BodyArea.shoulders],
     ),
     Exercise(
       id: 'side_bend',
@@ -34,6 +37,7 @@ class ExerciseLibrary {
       seconds: 40,
       category: ExerciseCategory.stretch,
       emoji: '🌿',
+      bodyAreas: [BodyArea.core, BodyArea.back],
     ),
     Exercise(
       id: 'forward_fold',
@@ -42,6 +46,7 @@ class ExerciseLibrary {
       seconds: 45,
       category: ExerciseCategory.stretch,
       emoji: '🙇',
+      bodyAreas: [BodyArea.back, BodyArea.legs],
     ),
     Exercise(
       id: 'hamstring',
@@ -50,6 +55,7 @@ class ExerciseLibrary {
       seconds: 45,
       category: ExerciseCategory.stretch,
       emoji: '🦵',
+      bodyAreas: [BodyArea.legs, BodyArea.hips],
     ),
 
     // Mobility
@@ -60,6 +66,7 @@ class ExerciseLibrary {
       seconds: 45,
       category: ExerciseCategory.mobility,
       emoji: '🐈',
+      bodyAreas: [BodyArea.back, BodyArea.core],
     ),
     Exercise(
       id: 'hip_circles',
@@ -68,6 +75,7 @@ class ExerciseLibrary {
       seconds: 30,
       category: ExerciseCategory.mobility,
       emoji: '🌀',
+      bodyAreas: [BodyArea.hips, BodyArea.core],
     ),
     Exercise(
       id: 'ankle_circles',
@@ -76,6 +84,7 @@ class ExerciseLibrary {
       seconds: 30,
       category: ExerciseCategory.mobility,
       emoji: '🦶',
+      bodyAreas: [BodyArea.ankles],
     ),
     Exercise(
       id: 'spine_twist',
@@ -84,6 +93,7 @@ class ExerciseLibrary {
       seconds: 40,
       category: ExerciseCategory.mobility,
       emoji: '🌪️',
+      bodyAreas: [BodyArea.back, BodyArea.core],
     ),
     Exercise(
       id: 'wrist_mobility',
@@ -92,6 +102,7 @@ class ExerciseLibrary {
       seconds: 30,
       category: ExerciseCategory.mobility,
       emoji: '✋',
+      bodyAreas: [BodyArea.wrists],
     ),
     Exercise(
       id: 'thoracic_open',
@@ -100,6 +111,7 @@ class ExerciseLibrary {
       seconds: 40,
       category: ExerciseCategory.mobility,
       emoji: '🦋',
+      bodyAreas: [BodyArea.chest, BodyArea.back, BodyArea.shoulders],
     ),
 
     // Breath
@@ -110,6 +122,7 @@ class ExerciseLibrary {
       seconds: 60,
       category: ExerciseCategory.breath,
       emoji: '🫁',
+      bodyAreas: [BodyArea.breath],
     ),
     Exercise(
       id: '4_7_8',
@@ -118,6 +131,7 @@ class ExerciseLibrary {
       seconds: 75,
       category: ExerciseCategory.breath,
       emoji: '🌬️',
+      bodyAreas: [BodyArea.breath],
     ),
     Exercise(
       id: 'belly_breath',
@@ -126,6 +140,7 @@ class ExerciseLibrary {
       seconds: 60,
       category: ExerciseCategory.breath,
       emoji: '💨',
+      bodyAreas: [BodyArea.breath, BodyArea.core],
     ),
     Exercise(
       id: 'alternate_nostril',
@@ -134,6 +149,7 @@ class ExerciseLibrary {
       seconds: 60,
       category: ExerciseCategory.breath,
       emoji: '🧠',
+      bodyAreas: [BodyArea.breath],
     ),
 
     // Cardio
@@ -144,6 +160,7 @@ class ExerciseLibrary {
       seconds: 45,
       category: ExerciseCategory.cardio,
       emoji: '🚶',
+      bodyAreas: [BodyArea.legs, BodyArea.fullBody],
     ),
     Exercise(
       id: 'jumping_jacks',
@@ -152,6 +169,7 @@ class ExerciseLibrary {
       seconds: 40,
       category: ExerciseCategory.cardio,
       emoji: '🤾',
+      bodyAreas: [BodyArea.fullBody, BodyArea.legs],
     ),
     Exercise(
       id: 'high_knees',
@@ -160,6 +178,7 @@ class ExerciseLibrary {
       seconds: 30,
       category: ExerciseCategory.cardio,
       emoji: '🏃',
+      bodyAreas: [BodyArea.legs, BodyArea.core],
     ),
     Exercise(
       id: 'squat_pulse',
@@ -168,6 +187,7 @@ class ExerciseLibrary {
       seconds: 35,
       category: ExerciseCategory.cardio,
       emoji: '🏋️',
+      bodyAreas: [BodyArea.legs, BodyArea.hips],
     ),
     Exercise(
       id: 'shadow_box',
@@ -176,6 +196,7 @@ class ExerciseLibrary {
       seconds: 45,
       category: ExerciseCategory.cardio,
       emoji: '🥊',
+      bodyAreas: [BodyArea.shoulders, BodyArea.core, BodyArea.legs],
     ),
   ];
 

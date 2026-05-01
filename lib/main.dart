@@ -8,6 +8,7 @@ import 'notification_service.dart';
 import 'onboarding_screen.dart';
 import 'settings_screen.dart';
 import 'storage.dart';
+import 'weekly_review.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,7 @@ Future<void> main() async {
     statusBarIconBrightness: Brightness.dark,
   ));
   final storage = await Storage.open();
+  await storage.maintainStreakWithFreezes();
   await NotificationService.instance.init();
   await NotificationService.instance
       .scheduleReminders(storage.reminderIntervalHours);
@@ -43,17 +45,24 @@ class _MoveMateAppState extends State<MoveMateApp> {
       brightness: Brightness.dark,
     );
 
+    final modeIndex = widget.storage.themeModeIndex;
+    final themeMode = modeIndex == 1
+        ? ThemeMode.light
+        : modeIndex == 2
+            ? ThemeMode.dark
+            : ThemeMode.system;
     return MaterialApp(
       title: 'MoveMate',
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(lightScheme),
       darkTheme: _buildTheme(darkScheme),
+      themeMode: themeMode,
       home: !widget.storage.onboarded
           ? OnboardingScreen(
               storage: widget.storage,
               onDone: () => setState(() {}),
             )
-          : AppShell(storage: widget.storage),
+          : AppShell(storage: widget.storage, onThemeChanged: () => setState(() {})),
     );
   }
 
@@ -90,7 +99,9 @@ class _MoveMateAppState extends State<MoveMateApp> {
 
 class AppShell extends StatefulWidget {
   final Storage storage;
-  const AppShell({super.key, required this.storage});
+  final VoidCallback onThemeChanged;
+  const AppShell(
+      {super.key, required this.storage, required this.onThemeChanged});
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -108,6 +119,9 @@ class _AppShellState extends State<AppShell> {
 
   void _maybeShowReminder() {
     if (_reminderShown || !mounted) return;
+    // Try the weekly review first; it returns instantly if conditions don't
+    // match (not Monday, no data, already shown this week).
+    maybeShowWeeklyReview(context, widget.storage);
     final sessions = widget.storage.sessions;
     if (sessions.isEmpty) return;
     final last = sessions.first.completedAt;
@@ -135,6 +149,11 @@ class _AppShellState extends State<AppShell> {
 
   void _refresh() => setState(() {});
 
+  void _onSettingsChanged() {
+    _refresh();
+    widget.onThemeChanged();
+  }
+
   @override
   Widget build(BuildContext context) {
     final pages = <Widget>[
@@ -143,7 +162,8 @@ class _AppShellState extends State<AppShell> {
         onSessionComplete: _refresh,
       ),
       HistoryScreen(storage: widget.storage),
-      SettingsScreen(storage: widget.storage, onChanged: _refresh),
+      SettingsScreen(
+          storage: widget.storage, onChanged: _onSettingsChanged),
     ];
 
     return Scaffold(

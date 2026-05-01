@@ -4,10 +4,12 @@ import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'achievements.dart';
 import 'models.dart';
 import 'mood_picker.dart';
+import 'note_picker.dart';
 import 'storage.dart';
 import 'tts_service.dart';
 
@@ -161,6 +163,9 @@ class _SessionScreenState extends State<SessionScreen>
     );
     _moodAfter = ma;
 
+    if (!mounted) return;
+    final note = await askForSessionNote(context);
+
     await widget.storage.addSession(SessionRecord(
       completedAt: DateTime.now(),
       planTitle: widget.plan.title,
@@ -168,7 +173,15 @@ class _SessionScreenState extends State<SessionScreen>
       seconds: widget.plan.totalSeconds,
       moodBefore: _moodBefore,
       moodAfter: _moodAfter,
+      note: note,
     ));
+    final newFreezes = await widget.storage.grantFreezesForStreak();
+    final streakAfterAdd = widget.storage.currentStreak;
+    final lastCelebrated = widget.storage.lastCelebratedStreak;
+    final milestone = _milestoneCrossed(lastCelebrated, streakAfterAdd);
+    if (milestone != null) {
+      await widget.storage.setLastCelebratedStreak(milestone);
+    }
 
     final earned = AchievementCatalog.earned(
       widget.storage.sessions,
@@ -186,12 +199,26 @@ class _SessionScreenState extends State<SessionScreen>
     final delta = (_moodBefore != null && _moodAfter != null)
         ? _moodAfter! - _moodBefore!
         : null;
+    final streakAfter = widget.storage.currentStreak;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) =>
-          _CompletionDialog(plan: widget.plan, moodDelta: delta),
+      builder: (_) => _CompletionDialog(
+        plan: widget.plan,
+        moodDelta: delta,
+        streak: streakAfter,
+        freezesEarned: newFreezes,
+      ),
     );
+    if (!mounted) return;
+    if (milestone != null) {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => _StreakMilestoneDialog(milestone: milestone),
+      );
+      if (!mounted) return;
+    }
     if (!mounted) return;
     if (newlyEarned.isNotEmpty) {
       await showDialog<void>(
@@ -545,6 +572,175 @@ class _RoundIconButton extends StatelessWidget {
   }
 }
 
+int? _milestoneCrossed(int last, int current) {
+  const milestones = [7, 14, 30, 60, 100, 200, 365];
+  for (final m in milestones) {
+    if (current >= m && last < m) return m;
+  }
+  return null;
+}
+
+class _StreakMilestoneDialog extends StatefulWidget {
+  final int milestone;
+  const _StreakMilestoneDialog({required this.milestone});
+
+  @override
+  State<_StreakMilestoneDialog> createState() => _StreakMilestoneDialogState();
+}
+
+class _StreakMilestoneDialogState extends State<_StreakMilestoneDialog> {
+  late final ConfettiController _confetti;
+
+  @override
+  void initState() {
+    super.initState();
+    _confetti = ConfettiController(duration: const Duration(seconds: 3));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _confetti.play());
+  }
+
+  @override
+  void dispose() {
+    _confetti.dispose();
+    super.dispose();
+  }
+
+  String get _title {
+    switch (widget.milestone) {
+      case 7:
+        return 'First week — done!';
+      case 14:
+        return 'Two weeks of momentum';
+      case 30:
+        return 'A whole month of you';
+      case 60:
+        return 'Two months strong';
+      case 100:
+        return '100 days. Legendary.';
+      case 200:
+        return '200 days — top tier';
+      case 365:
+        return 'A year of moving!';
+      default:
+        return '${widget.milestone}-day streak!';
+    }
+  }
+
+  String get _subtitle {
+    switch (widget.milestone) {
+      case 7:
+        return 'You moved every single day this week. That\'s how habits start.';
+      case 14:
+        return 'Consistency over intensity. You\'re proving that.';
+      case 30:
+        return 'A month is when habits become identity. Welcome to the other side.';
+      case 60:
+        return 'You\'re past every research paper\'s "habit threshold."';
+      case 100:
+        return 'Triple digits of self-care. Few make it here.';
+      case 200:
+        return 'Your daily ritual is just… who you are now.';
+      case 365:
+        return 'A full year. Take a breath and feel that win.';
+      default:
+        return 'Keep going — every day counts.';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+          contentPadding: const EdgeInsets.fromLTRB(28, 32, 28, 16),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFF8A3A), Color(0xFFFFD449)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFF8A3A).withValues(alpha: 0.6),
+                      blurRadius: 40,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🔥', style: TextStyle(fontSize: 40)),
+                      Text('${widget.milestone}',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              height: 1)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(_title,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w900)),
+              const SizedBox(height: 8),
+              Text(_subtitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.4)),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('I\'m proud',
+                  style: TextStyle(fontWeight: FontWeight.w800)),
+            ),
+          ],
+        ),
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: _confetti,
+            blastDirection: pi / 2,
+            blastDirectionality: BlastDirectionality.explosive,
+            emissionFrequency: 0.04,
+            numberOfParticles: 30,
+            maxBlastForce: 32,
+            minBlastForce: 12,
+            gravity: 0.22,
+            shouldLoop: false,
+            colors: const [
+              Color(0xFFFF8A3A),
+              Color(0xFFFFD449),
+              Color(0xFF2EB872),
+              Color(0xFF64B5F6),
+              Color(0xFFE57373),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _AchievementsUnlockedDialog extends StatelessWidget {
   final List<Achievement> achievements;
   const _AchievementsUnlockedDialog({required this.achievements});
@@ -613,7 +809,14 @@ class _AchievementsUnlockedDialog extends StatelessWidget {
 class _CompletionDialog extends StatefulWidget {
   final WorkoutPlan plan;
   final int? moodDelta;
-  const _CompletionDialog({required this.plan, this.moodDelta});
+  final int streak;
+  final int freezesEarned;
+  const _CompletionDialog({
+    required this.plan,
+    required this.streak,
+    required this.freezesEarned,
+    this.moodDelta,
+  });
 
   @override
   State<_CompletionDialog> createState() => _CompletionDialogState();
@@ -633,6 +836,21 @@ class _CompletionDialogState extends State<_CompletionDialog> {
   void dispose() {
     _confetti.dispose();
     super.dispose();
+  }
+
+  Future<void> _share() async {
+    final delta = widget.moodDelta;
+    final mood = delta == null
+        ? ''
+        : delta > 0
+            ? ' Mood +$delta ✨'
+            : delta == 0
+                ? ' Mood steady 🌿'
+                : ' Mood $delta 💭';
+    final streak = widget.streak >= 2 ? '\nStreak: ${widget.streak} 🔥' : '';
+    final text =
+        'Just did a ${widget.plan.formattedDuration} ${widget.plan.title} on MoveMate.$mood$streak\n#MoveMate #PhysTech';
+    await Share.share(text);
   }
 
   @override
@@ -666,8 +884,39 @@ class _CompletionDialogState extends State<_CompletionDialog> {
                 const SizedBox(height: 14),
                 _MoodDeltaBadge(delta: delta),
               ],
+              if (widget.freezesEarned > 0) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('❄️',
+                          style: TextStyle(fontSize: 22)),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.freezesEarned == 1
+                            ? '+1 streak freeze earned'
+                            : '+${widget.freezesEarned} streak freezes earned',
+                        style: const TextStyle(
+                          color: Color(0xFF0369A1),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
-              Text('Your streak is growing. Great job!',
+              Text(
+                  widget.streak >= 2
+                      ? '${widget.streak}-day streak — keep it alive!'
+                      : 'Your streak is growing. Great job!',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color:
@@ -675,6 +924,11 @@ class _CompletionDialogState extends State<_CompletionDialog> {
             ],
           ),
           actions: [
+            TextButton.icon(
+              icon: const Icon(Icons.ios_share),
+              label: const Text('Share'),
+              onPressed: _share,
+            ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
               child: const Text('Awesome'),

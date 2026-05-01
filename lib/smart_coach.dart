@@ -1,0 +1,116 @@
+import 'body_coverage.dart';
+import 'insights.dart';
+import 'models.dart';
+import 'storage.dart';
+
+class CoachLine {
+  final String text;
+  final String emoji;
+  const CoachLine({required this.text, required this.emoji});
+}
+
+class SmartCoach {
+  /// Builds 2-4 short coach lines for the home screen, oriented around
+  /// today + the trailing 7 days. Lines are ordered by relevance.
+  static List<CoachLine> dailySummary(Storage storage, {DateTime? now}) {
+    final clock = now ?? DateTime.now();
+    final sessions = storage.sessions;
+    final goal = storage.dailyGoalMinutes;
+    final todayMin = storage.todayMinutes;
+    final streak = storage.currentStreak;
+    final freezes = storage.freezesAvailable;
+    final insights = WeeklyInsights.from(sessions);
+    final coverage = BodyCoverage.lastWeek(sessions, clock);
+
+    final lines = <CoachLine>[];
+
+    // Streak vibe.
+    if (streak >= 14) {
+      lines.add(CoachLine(
+          emoji: '🔥',
+          text: 'You\'re on a $streak-day streak — protected by $freezes freeze${freezes == 1 ? "" : "s"}.'));
+    } else if (streak >= 3) {
+      lines.add(CoachLine(
+          emoji: '🔥',
+          text:
+              'Day $streak in a row. Tiny moves, big momentum.'));
+    } else if (streak == 0 && sessions.isNotEmpty) {
+      lines.add(const CoachLine(
+          emoji: '🌱',
+          text: 'A short session today restarts your streak.'));
+    }
+
+    // Today goal status.
+    if (goal > 0) {
+      if (todayMin >= goal) {
+        lines.add(CoachLine(
+            emoji: '✅',
+            text:
+                'Daily goal already met — anything more is a bonus today.'));
+      } else if (todayMin > 0) {
+        lines.add(CoachLine(
+            emoji: '🎯',
+            text:
+                '$todayMin / $goal min today — ${goal - todayMin} min closes the loop.'));
+      } else {
+        lines.add(CoachLine(
+            emoji: '🎯',
+            text:
+                'Nothing logged today — a 2-minute reset gets you on the board.'));
+      }
+    }
+
+    // Mood signal.
+    final moodAvg = insights.averageMoodDelta;
+    if (moodAvg != null && insights.moodTrackedSessions >= 2) {
+      if (moodAvg >= 1.0) {
+        lines.add(CoachLine(
+            emoji: '✨',
+            text:
+                'Movement has lifted your mood by +${moodAvg.toStringAsFixed(1)} on average — keep the rhythm.'));
+      } else if (moodAvg <= -0.5) {
+        lines.add(CoachLine(
+            emoji: '💭',
+            text:
+                'Mood dipped on average — try a calmer breathing or wind-down.'));
+      }
+    }
+
+    // Variety / category gaps.
+    final missed = insights.missedCategoriesThisWeek;
+    if (missed.length == 1) {
+      lines.add(CoachLine(
+          emoji: '🎨',
+          text:
+              'No ${missed.first.label.toLowerCase()} this week — a quick session rounds you out.'));
+    } else if (missed.length >= 2 && missed.length < 4) {
+      final names = missed
+          .take(2)
+          .map((c) => c.label.toLowerCase())
+          .join(' and ');
+      lines.add(CoachLine(
+          emoji: '🎨',
+          text: 'Missed this week: $names. Mix it up tomorrow.'));
+    }
+
+    // Body coverage gap (most useful when at least some movement happened).
+    if (coverage.totalSeconds > 0 && coverage.neglected.isNotEmpty) {
+      final spotlight = coverage.neglected.first;
+      lines.add(CoachLine(
+          emoji: spotlight.emoji,
+          text:
+              '${spotlight.label} hasn\'t had attention this week — slip in a quick segment.'));
+    }
+
+    // Empty-state nudge.
+    if (lines.isEmpty) {
+      lines.add(const CoachLine(
+          emoji: '🌅',
+          text:
+              'Welcome — start with a 3-minute desk reset to set the tone.'));
+    }
+
+    // Keep it tight on home: at most 4 lines.
+    return lines.take(4).toList();
+  }
+}

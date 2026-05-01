@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'achievements.dart';
+import 'body_coverage.dart';
+import 'calendar_screen.dart';
 import 'insights.dart';
 import 'models.dart';
 import 'storage.dart';
@@ -23,17 +25,33 @@ class HistoryScreen extends StatelessWidget {
       storage.dailyGoalMinutes,
     ).map((a) => a.id).toSet();
     final insights = WeeklyInsights.from(sessions);
+    final coverage = BodyCoverage.lastWeek(sessions, DateTime.now());
 
     return Scaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
-            Text('Progress',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text('Progress',
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w800)),
+                ),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.calendar_month),
+                  tooltip: 'Open calendar',
+                  onPressed: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => CalendarScreen(storage: storage),
+                    ));
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 4),
             Text('See how consistent your movement is over time.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -75,6 +93,8 @@ class HistoryScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _WeeklyBarChart(insights: insights, goal: storage.dailyGoalMinutes),
             const SizedBox(height: 12),
+            _MoodTrendCard(sessions: sessions),
+            const SizedBox(height: 12),
             _InsightsCard(bullets: insights.bullets),
             const SizedBox(height: 24),
             Text('Activity (28 days)',
@@ -84,6 +104,8 @@ class HistoryScreen extends StatelessWidget {
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             _Heatmap(data: mapData),
+            const SizedBox(height: 24),
+            _BodyCoverageSection(coverage: coverage),
             const SizedBox(height: 24),
             _AchievementsSection(earnedIds: earned),
             const SizedBox(height: 24),
@@ -257,6 +279,182 @@ class _BarColumn extends StatelessWidget {
   }
 }
 
+class _MoodTrendCard extends StatelessWidget {
+  final List<SessionRecord> sessions;
+  const _MoodTrendCard({required this.sessions});
+
+  @override
+  Widget build(BuildContext context) {
+    final tracked = sessions
+        .where((s) => s.moodDelta != null)
+        .toList()
+        .reversed // sessions are newest-first; reverse to chronological
+        .toList();
+    final last = tracked.length > 12
+        ? tracked.sublist(tracked.length - 12)
+        : tracked;
+    final scheme = Theme.of(context).colorScheme;
+
+    if (last.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            const Text('😊', style: TextStyle(fontSize: 24)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Track mood before/after a session to see how movement shifts how you feel.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.mood, size: 20, color: scheme.primary),
+              const SizedBox(width: 8),
+              Text('Mood trend',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              const Spacer(),
+              Text('${last.length} session${last.length == 1 ? "" : "s"}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 80,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                for (final s in last)
+                  Expanded(
+                    child: _MoodBar(delta: s.moodDelta!),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Older',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600)),
+              Text('Latest',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MoodBar extends StatelessWidget {
+  final int delta;
+  const _MoodBar({required this.delta});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final positive = delta > 0;
+    final neutral = delta == 0;
+    final color = positive
+        ? const Color(0xFF2EB872)
+        : neutral
+            ? scheme.onSurfaceVariant.withValues(alpha: 0.55)
+            : const Color(0xFFE57373);
+    // Bar height represents |delta| in 0..4 range from a 30px center axis.
+    final magnitude = delta.abs().clamp(0, 4);
+    final h = magnitude == 0 ? 6.0 : 8.0 + magnitude * 7.0;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Column(
+        children: [
+          Expanded(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: positive
+                  ? TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: h),
+                      duration: const Duration(milliseconds: 500),
+                      builder: (_, val, _) => Container(
+                        height: val,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(6)),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ),
+          Container(
+            height: 2,
+            margin: const EdgeInsets.symmetric(vertical: 2),
+            color: scheme.outlineVariant,
+          ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: !positive && !neutral
+                  ? TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: h),
+                      duration: const Duration(milliseconds: 500),
+                      builder: (_, val, _) => Container(
+                        height: val,
+                        decoration: BoxDecoration(
+                          color: color,
+                          borderRadius: const BorderRadius.vertical(
+                              bottom: Radius.circular(6)),
+                        ),
+                      ),
+                    )
+                  : neutral
+                      ? Container(
+                          margin: const EdgeInsets.only(top: 2),
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _InsightsCard extends StatelessWidget {
   final List<String> bullets;
   const _InsightsCard({required this.bullets});
@@ -315,6 +513,167 @@ class _InsightsCard extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _BodyCoverageSection extends StatelessWidget {
+  final BodyCoverage coverage;
+  const _BodyCoverageSection({required this.coverage});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final entries = coverage.secondsByArea.entries
+        .where((e) => e.value > 0)
+        .toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final maxSec = entries.isEmpty
+        ? 60
+        : entries.first.value;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Body coverage',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(width: 8),
+            Text('· last 7 days',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: entries.isEmpty
+              ? Row(
+                  children: [
+                    const Text('🫥', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                          'No coverage logged yet — your first session will start the map.',
+                          style: Theme.of(context).textTheme.bodyMedium),
+                    ),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final e in entries.take(8))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _BodyAreaBar(
+                          area: e.key,
+                          minutes: ((e.value) / 60).round(),
+                          ratio: (e.value / maxSec).clamp(0.0, 1.0),
+                        ),
+                      ),
+                    if (coverage.neglected.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: scheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.flag_outlined,
+                                size: 16, color: scheme.onSurfaceVariant),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                'Untouched: ${coverage.neglected.take(4).map((a) => a.label.toLowerCase()).join(", ")}.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                        color: scheme.onSurfaceVariant,
+                                        height: 1.3),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BodyAreaBar extends StatelessWidget {
+  final BodyArea area;
+  final int minutes;
+  final double ratio;
+  const _BodyAreaBar({
+    required this.area,
+    required this.minutes,
+    required this.ratio,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        SizedBox(
+          width: 90,
+          child: Row(
+            children: [
+              Text(area.emoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(area.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: ratio),
+              duration: const Duration(milliseconds: 700),
+              builder: (_, val, _) => LinearProgressIndicator(
+                value: val,
+                minHeight: 10,
+                backgroundColor: scheme.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation(scheme.primary),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 48,
+          child: Text('$minutes min',
+              textAlign: TextAlign.right,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: scheme.onSurface)),
+        ),
+      ],
     );
   }
 }
@@ -577,15 +936,47 @@ class _SessionTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(session.planTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context)
                         .textTheme
                         .bodyLarge
                         ?.copyWith(fontWeight: FontWeight.w700)),
                 Text(fmt.format(session.completedAt),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context)
                             .colorScheme
                             .onSurfaceVariant)),
+                if (session.note != null && session.note!.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 1, right: 4),
+                          child: Text('📝',
+                              style: TextStyle(fontSize: 12)),
+                        ),
+                        Expanded(
+                          child: Text(session.note!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                      fontStyle: FontStyle.italic,
+                                      height: 1.3)),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
