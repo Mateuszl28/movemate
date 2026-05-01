@@ -261,6 +261,8 @@ class _SessionScreenState extends State<SessionScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(widget.plan.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(context)
                                   .textTheme
                                   .titleSmall
@@ -319,6 +321,8 @@ class _SessionScreenState extends State<SessionScreen>
                           children: [
                             Text(_current.name,
                                 textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context)
                                     .textTheme
                                     .headlineSmall
@@ -326,6 +330,8 @@ class _SessionScreenState extends State<SessionScreen>
                             const SizedBox(height: 10),
                             Text(_current.instruction,
                                 textAlign: TextAlign.center,
+                                maxLines: 4,
+                                overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodyLarge

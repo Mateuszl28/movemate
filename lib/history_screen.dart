@@ -357,7 +357,7 @@ class _AchievementsSection extends StatelessWidget {
             crossAxisCount: 4,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio: 0.78,
+            childAspectRatio: 0.92,
             children: [
               for (final a in items)
                 _BadgeTile(
@@ -382,7 +382,7 @@ class _BadgeTile extends StatelessWidget {
       message: '${achievement.name}\n${achievement.description}',
       preferBelow: false,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: earned
               ? scheme.primaryContainer
@@ -394,25 +394,30 @@ class _BadgeTile extends StatelessWidget {
           ),
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Opacity(
               opacity: earned ? 1.0 : 0.35,
               child: Text(achievement.emoji,
-                  style: const TextStyle(fontSize: 28)),
+                  style: const TextStyle(fontSize: 24)),
             ),
             const SizedBox(height: 4),
-            Text(
-              achievement.name,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: earned
-                        ? scheme.onPrimaryContainer
-                        : scheme.onSurfaceVariant,
-                  ),
+            Flexible(
+              child: Text(
+                achievement.name,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontSize: 10,
+                      height: 1.1,
+                      fontWeight: FontWeight.w700,
+                      color: earned
+                          ? scheme.onPrimaryContainer
+                          : scheme.onSurfaceVariant,
+                    ),
+              ),
             ),
           ],
         ),
@@ -449,24 +454,33 @@ class _StatCard extends StatelessWidget {
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 12),
           Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant)),
           const SizedBox(height: 2),
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: value,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontWeight: FontWeight.w800),
-                ),
-                TextSpan(
-                  text: ' $unit',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ],
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: RichText(
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: value,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w800),
+                  ),
+                  TextSpan(
+                    text: ' $unit',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color:
+                            Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

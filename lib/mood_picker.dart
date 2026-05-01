@@ -63,6 +63,8 @@ class _MoodPickerState extends State<MoodPicker> {
                   ),
                   const SizedBox(height: 4),
                   Text(moodLabels[i],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             fontWeight:
                                 selected ? FontWeight.w800 : FontWeight.w500,
