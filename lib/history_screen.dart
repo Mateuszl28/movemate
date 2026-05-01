@@ -26,6 +26,10 @@ class HistoryScreen extends StatelessWidget {
       sessions,
       streak,
       storage.dailyGoalMinutes,
+      eyeBreaksToday: storage.eyeBreaksToday,
+      eyeBreaksWeek: storage.eyeBreaksWeek,
+      bestPostureScore: storage.bestPostureScore,
+      ranPostureCheck: storage.hasRunPostureCheck,
     ).map((a) => a.id).toSet();
     final insights = WeeklyInsights.from(sessions);
     final coverage = BodyCoverage.lastWeek(sessions, DateTime.now());

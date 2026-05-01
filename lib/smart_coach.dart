@@ -102,6 +102,35 @@ class SmartCoach {
               '${spotlight.label} hasn\'t had attention this week — slip in a quick segment.'));
     }
 
+    // Eye-strain nudge: working hours, no eye breaks today.
+    final eyeToday = storage.eyeBreaksToday;
+    final hour = clock.hour;
+    if (eyeToday == 0 && hour >= 10 && hour <= 18) {
+      lines.add(const CoachLine(
+          emoji: '👀',
+          text:
+              'No eye breaks yet — a 30-second 20-20-20 keeps your focus sharp.'));
+    } else if (eyeToday >= 3) {
+      lines.add(CoachLine(
+          emoji: '🔭',
+          text:
+              '$eyeToday eye breaks logged today — your retinas thank you.'));
+    }
+
+    // Posture signal.
+    final posture = storage.latestPostureScore;
+    if (posture != null && posture < 60) {
+      lines.add(const CoachLine(
+          emoji: '🪑',
+          text:
+              'Your last posture check flagged drift — re-run it after a quick mobility flow.'));
+    } else if (posture == null && sessions.length >= 3) {
+      lines.add(const CoachLine(
+          emoji: '🪞',
+          text:
+              'Try a 30-second posture check — it tunes your setup before the next focus block.'));
+    }
+
     // Empty-state nudge.
     if (lines.isEmpty) {
       lines.add(const CoachLine(

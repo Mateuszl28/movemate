@@ -190,6 +190,10 @@ class _SessionScreenState extends State<SessionScreen>
       widget.storage.sessions,
       widget.storage.currentStreak,
       widget.storage.dailyGoalMinutes,
+      eyeBreaksToday: widget.storage.eyeBreaksToday,
+      eyeBreaksWeek: widget.storage.eyeBreaksWeek,
+      bestPostureScore: widget.storage.bestPostureScore,
+      ranPostureCheck: widget.storage.hasRunPostureCheck,
     );
     final seen = widget.storage.seenAchievements;
     final newlyEarned =

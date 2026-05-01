@@ -11,6 +11,9 @@ MoveMate nudges you to take short movement breaks during the day, guides you thr
 - **Notifications** — configurable movement reminders at chosen intervals (`flutter_local_notifications` + `timezone`)
 - **Streak with freezes** — daily streak system with protection days
 - **Wellness Score, Movement DNA, Energy Hours** — wellbeing indicators, activity profile, and an energy-by-hour map
+- **Eye Break (20-20-20)** — guided 30-second three-phase eye-rest with TTS prompts (`eye_break_screen.dart`)
+- **Posture Check** — 5-question interactive self-check with score, weak-spot tags, and a tailored 3-min follow-up flow (`posture_check_screen.dart`)
+- **Hydration tracking** — daily glass goal with a home-screen pill
 - **Mood & notes** — quick mood picker, per-session notes
 - **Body coverage** — visualization of which body parts were trained
 - **Achievements, daily challenge, daily mantra, weekly review**
@@ -48,7 +51,7 @@ All app code lives in `lib/`:
 |---|---|
 | `main.dart` | Entry point, theming, onboarding ↔ app routing |
 | `home_screen.dart` | Main dashboard screen |
-| `session_screen.dart`, `breathing_screen.dart`, `focus_screen.dart` | Active sessions |
+| `session_screen.dart`, `breathing_screen.dart`, `focus_screen.dart`, `eye_break_screen.dart`, `posture_check_screen.dart` | Active sessions and wellness tools |
 | `exercise_library.dart`, `custom_builder.dart` | Exercise library and custom builder |
 | `smart_coach.dart`, `recommendations.dart` | Recommendation logic |
 | `storage.dart`, `models.dart` | Persistence and data models |

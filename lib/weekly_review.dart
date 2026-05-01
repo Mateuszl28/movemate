@@ -110,18 +110,23 @@ class WeeklyReviewSummary {
 
     // New achievements (earned this week).
     final earnedAll = AchievementCatalog.earned(
-            sessions, storage.currentStreak, storage.dailyGoalMinutes)
-        .toSet();
+      sessions,
+      storage.currentStreak,
+      storage.dailyGoalMinutes,
+      eyeBreaksToday: storage.eyeBreaksToday,
+      eyeBreaksWeek: storage.eyeBreaksWeek,
+      bestPostureScore: storage.bestPostureScore,
+      ranPostureCheck: storage.hasRunPostureCheck,
+    ).toSet();
     final earnedBefore = AchievementCatalog.earned(
-            priorWeekSessions +
-                sessions
-                    .where((s) =>
-                        s.completedAt.isBefore(startOfLastWeek))
-                    .toList(),
-            // approximate: streak before last week unknowable cheaply
-            0,
-            storage.dailyGoalMinutes)
-        .toSet();
+      priorWeekSessions +
+          sessions
+              .where((s) => s.completedAt.isBefore(startOfLastWeek))
+              .toList(),
+      // approximate: streak before last week unknowable cheaply
+      0,
+      storage.dailyGoalMinutes,
+    ).toSet();
     final newAchievements =
         earnedAll.difference(earnedBefore).length;
 

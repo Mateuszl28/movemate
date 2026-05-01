@@ -20,6 +20,8 @@ class Storage {
   static const _kCoachPersonality = 'coachPersonality'; // 0 = calm, 1 = upbeat, 2 = strict
   static const _kHydrationGoal = 'hydrationGoal';
   static const _kHydrationLog = 'hydrationLog'; // JSON map: YYYY-MM-DD -> int
+  static const _kEyeBreaksLog = 'eyeBreaksLog'; // JSON map: YYYY-MM-DD -> int
+  static const _kPostureLog = 'postureLog';     // JSON map: YYYY-MM-DD -> List<int>
 
   static const int maxFreezes = 3;
 
@@ -77,6 +79,8 @@ class Storage {
     await _prefs.remove(_kFreezesAvailable);
     await _prefs.remove(_kUsedFreezeDates);
     await _prefs.remove(_kLastFreezeMilestone);
+    await _prefs.remove(_kEyeBreaksLog);
+    await _prefs.remove(_kPostureLog);
   }
 
   int get freezesAvailable => _prefs.getInt(_kFreezesAvailable) ?? 0;
@@ -169,6 +173,96 @@ class Storage {
       result[key] = log[key] ?? 0;
     }
     return result;
+  }
+
+  Map<String, int> get eyeBreaksLog {
+    final raw = _prefs.getString(_kEyeBreaksLog);
+    if (raw == null || raw.isEmpty) return const {};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map((k, v) => MapEntry(k, (v as num).toInt()));
+  }
+
+  int get eyeBreaksToday => eyeBreaksLog[_dayKey(DateTime.now())] ?? 0;
+
+  int get eyeBreaksWeek {
+    final log = eyeBreaksLog;
+    final now = DateTime.now();
+    int total = 0;
+    for (int i = 0; i < 7; i++) {
+      final key = _dayKey(now.subtract(Duration(days: i)));
+      total += log[key] ?? 0;
+    }
+    return total;
+  }
+
+  Future<void> logEyeBreak() async {
+    final log = Map<String, int>.from(eyeBreaksLog);
+    final key = _dayKey(DateTime.now());
+    log[key] = (log[key] ?? 0) + 1;
+    await _prefs.setString(_kEyeBreaksLog, jsonEncode(log));
+  }
+
+  Map<String, List<int>> get postureLog {
+    final raw = _prefs.getString(_kPostureLog);
+    if (raw == null || raw.isEmpty) return const {};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map((k, v) => MapEntry(
+        k, (v as List).map((e) => (e as num).toInt()).toList()));
+  }
+
+  /// Most recent posture-check score (0..100), or null if never run.
+  int? get latestPostureScore {
+    final log = postureLog;
+    if (log.isEmpty) return null;
+    final keys = log.keys.toList()..sort();
+    final latest = log[keys.last];
+    if (latest == null || latest.isEmpty) return null;
+    return latest.last;
+  }
+
+  /// Highest posture score ever logged (0..100), or null if never run.
+  int? get bestPostureScore {
+    final log = postureLog;
+    if (log.isEmpty) return null;
+    int best = -1;
+    for (final scores in log.values) {
+      for (final s in scores) {
+        if (s > best) best = s;
+      }
+    }
+    return best < 0 ? null : best;
+  }
+
+  bool get hasRunPostureCheck => postureLog.isNotEmpty;
+
+  /// Average posture score over the last [days] days (0..100), or null if no data.
+  int? postureAverage({int days = 7}) {
+    final log = postureLog;
+    if (log.isEmpty) return null;
+    final now = DateTime.now();
+    int sum = 0;
+    int count = 0;
+    for (int i = 0; i < days; i++) {
+      final key = _dayKey(now.subtract(Duration(days: i)));
+      final scores = log[key];
+      if (scores == null) continue;
+      for (final s in scores) {
+        sum += s;
+        count += 1;
+      }
+    }
+    if (count == 0) return null;
+    return (sum / count).round();
+  }
+
+  Future<void> logPosture(int score) async {
+    final log = Map<String, List<int>>.from(postureLog
+        .map((k, v) => MapEntry(k, List<int>.from(v))));
+    final key = _dayKey(DateTime.now());
+    final list = log[key] ?? <int>[];
+    list.add(score.clamp(0, 100));
+    log[key] = list;
+    await _prefs.setString(_kPostureLog, jsonEncode(log));
   }
 
   /// Grants freezes when the user crosses a 7-day streak boundary that we

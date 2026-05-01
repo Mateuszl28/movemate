@@ -6,8 +6,10 @@ import 'custom_builder.dart';
 import 'daily_challenge.dart';
 import 'daily_mantra.dart';
 import 'exercise_library.dart';
+import 'eye_break_screen.dart';
 import 'focus_screen.dart';
 import 'models.dart';
+import 'posture_check_screen.dart';
 import 'recommendations.dart';
 import 'session_screen.dart';
 import 'smart_coach.dart';
@@ -162,6 +164,34 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 24),
+            Text('Wellness tools',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            _WellnessToolsRow(
+              eyeBreaksToday: storage.eyeBreaksToday,
+              postureScore: storage.latestPostureScore,
+              onEyeBreak: () async {
+                final ok = await Navigator.of(context).push<bool>(
+                  FadeThroughRoute(
+                    builder: (_) => EyeBreakScreen(storage: storage),
+                  ),
+                );
+                if (ok == true) onSessionComplete();
+              },
+              onPostureCheck: () async {
+                final ok = await Navigator.of(context).push<bool>(
+                  FadeThroughRoute(
+                    builder: (_) => PostureCheckScreen(storage: storage),
+                  ),
+                );
+                if (ok == true) onSessionComplete();
+                onSessionComplete();
+              },
             ),
             const SizedBox(height: 24),
             Text('Categories',
@@ -1705,6 +1735,142 @@ class _DailyMantraCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WellnessToolsRow extends StatelessWidget {
+  final int eyeBreaksToday;
+  final int? postureScore;
+  final VoidCallback onEyeBreak;
+  final VoidCallback onPostureCheck;
+  const _WellnessToolsRow({
+    required this.eyeBreaksToday,
+    required this.postureScore,
+    required this.onEyeBreak,
+    required this.onPostureCheck,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _ToolCard(
+            onTap: onEyeBreak,
+            emoji: '👀',
+            title: 'Eye break',
+            subtitle: '20-20-20',
+            badge: eyeBreaksToday > 0 ? '$eyeBreaksToday today' : '30s',
+            gradient: const [Color(0xFF3D5A80), Color(0xFF293E66)],
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _ToolCard(
+            onTap: onPostureCheck,
+            emoji: '🧍',
+            title: 'Posture',
+            subtitle: '5-step check',
+            badge: postureScore != null ? '$postureScore / 100' : 'Run check',
+            gradient: const [Color(0xFF7B5CFF), Color(0xFF4A6CFF)],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ToolCard extends StatelessWidget {
+  final VoidCallback onTap;
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final String badge;
+  final List<Color> gradient;
+  const _ToolCard({
+    required this.onTap,
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.badge,
+    required this.gradient,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          height: 132,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: gradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: gradient.last.withValues(alpha: 0.30),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 28)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(badge,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

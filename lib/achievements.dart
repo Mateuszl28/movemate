@@ -24,6 +24,10 @@ class _AchievementStats {
   final bool hadEarlySession; // before 9:00
   final bool hadLateSession; // after 21:00
   final bool hitDailyGoalToday;
+  final int eyeBreaksToday;
+  final int eyeBreaksWeek;
+  final int? bestPostureScore;
+  final bool ranPostureCheck;
 
   _AchievementStats({
     required this.sessionCount,
@@ -33,10 +37,21 @@ class _AchievementStats {
     required this.hadEarlySession,
     required this.hadLateSession,
     required this.hitDailyGoalToday,
+    this.eyeBreaksToday = 0,
+    this.eyeBreaksWeek = 0,
+    this.bestPostureScore,
+    this.ranPostureCheck = false,
   });
 
   factory _AchievementStats.from(
-      List<SessionRecord> sessions, int currentStreak, int dailyGoalMinutes) {
+    List<SessionRecord> sessions,
+    int currentStreak,
+    int dailyGoalMinutes, {
+    int eyeBreaksToday = 0,
+    int eyeBreaksWeek = 0,
+    int? bestPostureScore,
+    bool ranPostureCheck = false,
+  }) {
     final today = DateTime.now();
     final todayKey =
         '${today.year}-${today.month}-${today.day}';
@@ -62,6 +77,10 @@ class _AchievementStats {
       hadEarlySession: early,
       hadLateSession: late,
       hitDailyGoalToday: (todaySec / 60).round() >= dailyGoalMinutes,
+      eyeBreaksToday: eyeBreaksToday,
+      eyeBreaksWeek: eyeBreaksWeek,
+      bestPostureScore: bestPostureScore,
+      ranPostureCheck: ranPostureCheck,
     );
   }
 }
@@ -139,11 +158,54 @@ class AchievementCatalog {
       emoji: '🏆',
       check: (s) => s.hitDailyGoalToday,
     ),
+    Achievement(
+      id: 'eye_spy',
+      name: 'Eye spy',
+      description: 'Complete 3 eye breaks in a single day.',
+      emoji: '👀',
+      check: (s) => s.eyeBreaksToday >= 3,
+    ),
+    Achievement(
+      id: 'wide_focus',
+      name: 'Wide focus',
+      description: 'Take 10 eye breaks across the week.',
+      emoji: '🔭',
+      check: (s) => s.eyeBreaksWeek >= 10,
+    ),
+    Achievement(
+      id: 'aligned',
+      name: 'Aligned',
+      description: 'Hit a 100% posture check.',
+      emoji: '🧍',
+      check: (s) => (s.bestPostureScore ?? 0) >= 100,
+    ),
+    Achievement(
+      id: 'self_aware',
+      name: 'Self-aware',
+      description: 'Run your first posture check.',
+      emoji: '🪞',
+      check: (s) => s.ranPostureCheck,
+    ),
   ];
 
-  static List<Achievement> earned(List<SessionRecord> sessions, int streak,
-      int dailyGoalMinutes) {
-    final stats = _AchievementStats.from(sessions, streak, dailyGoalMinutes);
+  static List<Achievement> earned(
+    List<SessionRecord> sessions,
+    int streak,
+    int dailyGoalMinutes, {
+    int eyeBreaksToday = 0,
+    int eyeBreaksWeek = 0,
+    int? bestPostureScore,
+    bool ranPostureCheck = false,
+  }) {
+    final stats = _AchievementStats.from(
+      sessions,
+      streak,
+      dailyGoalMinutes,
+      eyeBreaksToday: eyeBreaksToday,
+      eyeBreaksWeek: eyeBreaksWeek,
+      bestPostureScore: bestPostureScore,
+      ranPostureCheck: ranPostureCheck,
+    );
     return all.where((a) => a.check(stats)).toList();
   }
 }
