@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import 'breathing_screen.dart';
 import 'custom_builder.dart';
 import 'daily_challenge.dart';
+import 'daily_mantra.dart';
 import 'exercise_library.dart';
 import 'focus_screen.dart';
 import 'models.dart';
@@ -9,6 +12,7 @@ import 'recommendations.dart';
 import 'session_screen.dart';
 import 'smart_coach.dart';
 import 'storage.dart';
+import 'transitions.dart';
 import 'wellness_detail_screen.dart';
 import 'wellness_score.dart';
 
@@ -38,6 +42,7 @@ class HomeScreen extends StatelessWidget {
     final challenge = DailyChallengeService.forDate(now,
         dailyGoalMinutes: storage.dailyGoalMinutes);
     final coachLines = SmartCoach.dailySummary(storage, now: now);
+    final mantra = DailyMantra.forDate(now, profile: storage.profile);
 
     return Scaffold(
       body: SafeArea(
@@ -45,10 +50,38 @@ class HomeScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
             _Header(greeting: greeting, streak: streak, freezes: freezes),
-            const SizedBox(height: 20),
+            const SizedBox(height: 14),
+            _StreakRescueBanner(
+              storage: storage,
+              now: now,
+              onRescue: () {
+                final plan = ExerciseLibrary.buildQuickPlan(
+                  ExerciseCategory.mobility,
+                  targetSeconds: 120,
+                );
+                _startPlan(context, plan);
+              },
+            ),
+            _SitTimerPill(
+              storage: storage,
+              now: now,
+              onQuickStart: () {
+                final plan = ExerciseLibrary.buildQuickPlan(
+                  ExerciseCategory.mobility,
+                  targetSeconds: 120,
+                );
+                _startPlan(context, plan);
+              },
+            ),
+            const SizedBox(height: 10),
+            _HydrationPill(
+              storage: storage,
+              onChanged: onSessionComplete,
+            ),
+            const SizedBox(height: 14),
             GestureDetector(
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
+                Navigator.of(context).push(FadeThroughRoute(
                   builder: (_) => WellnessDetailScreen(score: score),
                 ));
               },
@@ -57,6 +90,8 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             _SmartCoachCard(lines: coachLines),
+            const SizedBox(height: 14),
+            _DailyMantraCard(mantra: mantra),
             const SizedBox(height: 20),
             Text('Recommended now',
                 style: Theme.of(context)
@@ -106,9 +141,23 @@ class HomeScreen extends StatelessWidget {
                 Expanded(
                   child: _FocusModeTile(
                     onTap: () {
-                      Navigator.of(context).push(MaterialPageRoute(
+                      Navigator.of(context).push(FadeThroughRoute(
                         builder: (_) => FocusScreen(storage: storage),
                       ));
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _BreathingTile(
+                    onTap: () async {
+                      final logged = await Navigator.of(context).push<bool>(
+                        FadeThroughRoute(
+                          builder: (_) =>
+                              BreathingScreen(storage: storage),
+                        ),
+                      );
+                      if (logged == true) onSessionComplete();
                     },
                   ),
                 ),
@@ -165,7 +214,7 @@ class HomeScreen extends StatelessWidget {
 
   Future<void> _startPlan(BuildContext context, WorkoutPlan plan) async {
     final completed = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(
+      FadeThroughRoute(
         builder: (_) => SessionScreen(plan: plan, storage: storage),
       ),
     );
@@ -998,7 +1047,7 @@ class _BuildYourOwnTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           height: 130,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
@@ -1016,30 +1065,32 @@ class _BuildYourOwnTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: scheme.primary,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.tune,
-                    color: Colors.white, size: 20),
+                    color: Colors.white, size: 18),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Build your own',
+                  Text('Build',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w800)),
-                  Text('Mix categories.',
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: scheme.onSurface)),
+                  Text('Custom mix',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall),
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: scheme.onSurfaceVariant)),
                 ],
               ),
             ],
@@ -1062,7 +1113,7 @@ class _FocusModeTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           height: 130,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
@@ -1077,27 +1128,89 @@ class _FocusModeTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 34,
+                height: 34,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFB74D),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.timer_outlined,
-                    color: Colors.white, size: 20),
+                    color: Colors.white, size: 18),
               ),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Focus + move',
+                  Text('Focus',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14,
+                          fontSize: 13,
                           fontWeight: FontWeight.w800)),
-                  Text('Pomodoro w/ break',
+                  Text('Pomodoro',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: Colors.white70, fontSize: 11)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _BreathingTile extends StatelessWidget {
+  final VoidCallback onTap;
+  const _BreathingTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          height: 130,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF64B5F6), Color(0xFF1E88E5)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Center(
+                    child: Text('🫁', style: TextStyle(fontSize: 18))),
+              ),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Breathe',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800)),
+                  Text('Guided rhythm',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -1252,6 +1365,346 @@ class _PlanTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SitTimerPill extends StatelessWidget {
+  final Storage storage;
+  final DateTime now;
+  final VoidCallback onQuickStart;
+  const _SitTimerPill({
+    required this.storage,
+    required this.now,
+    required this.onQuickStart,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final sessions = storage.sessions;
+    if (sessions.isEmpty) return const SizedBox.shrink();
+    final last = sessions.first.completedAt;
+    final diff = now.difference(last);
+    final reminderHours = storage.reminderIntervalHours;
+
+    final ratio = diff.inMinutes / (reminderHours * 60);
+    final Color accent;
+    final IconData icon;
+    final String headline;
+    if (ratio < 0.85) {
+      accent = const Color(0xFF2EB872);
+      icon = Icons.check_circle_outline;
+      headline = 'You\'re on rhythm';
+    } else if (ratio < 1.6) {
+      accent = const Color(0xFFFFA726);
+      icon = Icons.access_time;
+      headline = 'Time to move soon';
+    } else {
+      accent = const Color(0xFFE53935);
+      icon = Icons.warning_amber_outlined;
+      headline = 'You\'ve been still too long';
+    }
+
+    final h = diff.inHours;
+    final m = diff.inMinutes.remainder(60);
+    final ago = h > 0 ? '${h}h ${m}m' : '${m}m';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: ratio < 0.85 ? null : onQuickStart,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+                color: accent.withValues(alpha: 0.4), width: 1.2),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: accent, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(headline,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w800,
+                            color: accent)),
+                    Text('Last move $ago ago',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant)),
+                  ],
+                ),
+              ),
+              if (ratio >= 0.85)
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: accent,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: onQuickStart,
+                  child: const Text('Quick 2 min',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 12)),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HydrationPill extends StatelessWidget {
+  final Storage storage;
+  final VoidCallback onChanged;
+  const _HydrationPill({required this.storage, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final glasses = storage.glassesToday;
+    final goal = storage.hydrationGoalGlasses;
+    final ratio = goal == 0 ? 0.0 : (glasses / goal).clamp(0.0, 1.0);
+    final scheme = Theme.of(context).colorScheme;
+    const blue = Color(0xFF1E88E5);
+    final hit = glasses >= goal;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+      decoration: BoxDecoration(
+        color: blue.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(18),
+        border:
+            Border.all(color: blue.withValues(alpha: 0.35), width: 1.2),
+      ),
+      child: Row(
+        children: [
+          const Text('💧', style: TextStyle(fontSize: 22)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                        hit
+                            ? 'Hydration goal hit!'
+                            : '$glasses / $goal glasses',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                            color: scheme.onSurface)),
+                    if (hit) ...[
+                      const SizedBox(width: 6),
+                      const Text('✅', style: TextStyle(fontSize: 13)),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: LinearProgressIndicator(
+                    value: ratio,
+                    minHeight: 6,
+                    backgroundColor: blue.withValues(alpha: 0.15),
+                    valueColor: const AlwaysStoppedAnimation(blue),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline, size: 22),
+            color: blue,
+            tooltip: 'Remove glass',
+            visualDensity: VisualDensity.compact,
+            onPressed: glasses > 0
+                ? () async {
+                    await storage.removeGlass();
+                    HapticFeedback.selectionClick();
+                    onChanged();
+                  }
+                : null,
+          ),
+          IconButton(
+            icon: const Icon(Icons.add_circle, size: 28),
+            color: blue,
+            tooltip: 'Add glass',
+            visualDensity: VisualDensity.compact,
+            onPressed: () async {
+              await storage.addGlass();
+              HapticFeedback.lightImpact();
+              onChanged();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StreakRescueBanner extends StatelessWidget {
+  final Storage storage;
+  final DateTime now;
+  final VoidCallback onRescue;
+  const _StreakRescueBanner({
+    required this.storage,
+    required this.now,
+    required this.onRescue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final streak = storage.currentStreak;
+    if (streak <= 0) return const SizedBox.shrink();
+    if (storage.todayMinutes > 0) return const SizedBox.shrink();
+    if (storage.freezesAvailable > 0) return const SizedBox.shrink();
+    final hour = now.hour;
+    if (hour < 17) return const SizedBox.shrink();
+
+    final hoursLeft = 24 - hour;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onRescue,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                colors: [Color(0xFFE53935), Color(0xFFC62828)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Row(
+              children: [
+                const Text('🆘', style: TextStyle(fontSize: 28)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Save your streak',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900)),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$streak-day streak ends in ${hoursLeft}h. 2 minutes of mobility keeps it alive.',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            height: 1.3),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text('Rescue',
+                      style: TextStyle(
+                          color: Color(0xFFC62828),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DailyMantraCard extends StatelessWidget {
+  final Mantra mantra;
+  const _DailyMantraCard({required this.mantra});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        gradient: LinearGradient(
+          colors: [
+            scheme.tertiaryContainer,
+            scheme.primaryContainer,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Text(mantra.emoji, style: const TextStyle(fontSize: 32)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Today\'s mantra',
+                    style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                        color: scheme.onPrimaryContainer
+                            .withValues(alpha: 0.75))),
+                const SizedBox(height: 2),
+                Text(mantra.text,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        color: scheme.onPrimaryContainer)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

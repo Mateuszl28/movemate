@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'models.dart';
 import 'notification_service.dart';
 import 'storage.dart';
+import 'tts_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Storage storage;
@@ -19,6 +20,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _reminderHours;
   late int _dailyGoal;
   late int _themeMode;
+  late CoachPersonality _coach;
+  late int _hydrationGoal;
 
   @override
   void initState() {
@@ -27,6 +30,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _reminderHours = widget.storage.reminderIntervalHours;
     _dailyGoal = widget.storage.dailyGoalMinutes;
     _themeMode = widget.storage.themeModeIndex;
+    _coach = CoachPersonality.values[widget.storage.coachPersonalityIndex];
+    _hydrationGoal = widget.storage.hydrationGoalGlasses;
   }
 
   @override
@@ -89,6 +94,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
             _Section(
+              title: 'Hydration goal',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('$_hydrationGoal glasses of water per day',
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  Slider(
+                    value: _hydrationGoal.toDouble(),
+                    min: 4,
+                    max: 12,
+                    divisions: 8,
+                    label: '$_hydrationGoal',
+                    onChanged: (v) =>
+                        setState(() => _hydrationGoal = v.round()),
+                    onChangeEnd: (v) async {
+                      await widget.storage
+                          .setHydrationGoalGlasses(v.round());
+                      widget.onChanged();
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _Section(
               title: 'Reminders',
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,6 +154,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   .onSurfaceVariant),
                     ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _Section(
+              title: 'Coach voice',
+              child: Column(
+                children: [
+                  for (final p in CoachPersonality.values)
+                    RadioListTile<CoachPersonality>(
+                      value: p,
+                      groupValue: _coach,
+                      onChanged: (v) async {
+                        if (v == null) return;
+                        setState(() => _coach = v);
+                        await widget.storage
+                            .setCoachPersonalityIndex(v.index);
+                        widget.onChanged();
+                      },
+                      title: Row(
+                        children: [
+                          Text(p.emoji,
+                              style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: 8),
+                          Text(p.label,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700)),
+                        ],
+                      ),
+                      subtitle: Text(p.description),
+                      contentPadding: EdgeInsets.zero,
+                    ),
                 ],
               ),
             ),

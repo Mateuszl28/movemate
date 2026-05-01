@@ -7,6 +7,7 @@ import 'exercise_library.dart';
 import 'models.dart';
 import 'session_screen.dart';
 import 'storage.dart';
+import 'transitions.dart';
 import 'tts_service.dart';
 
 class FocusScreen extends StatefulWidget {
@@ -40,7 +41,10 @@ class _FocusScreenState extends State<FocusScreen> {
 
   Future<void> _ensureTts() async {
     if (_ttsReady) return;
-    await _tts.init();
+    await _tts.init(
+      personality:
+          CoachPersonality.values[widget.storage.coachPersonalityIndex],
+    );
     _ttsReady = true;
   }
 
@@ -126,7 +130,7 @@ class _FocusScreenState extends State<FocusScreen> {
         ExerciseCategory.stretch,
         targetSeconds: _breakMinutes * 60,
       );
-      await Navigator.of(context).push(MaterialPageRoute(
+      await Navigator.of(context).push(FadeThroughRoute(
         builder: (_) =>
             SessionScreen(plan: plan, storage: widget.storage),
       ));

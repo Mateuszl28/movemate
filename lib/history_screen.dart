@@ -4,9 +4,12 @@ import 'package:intl/intl.dart';
 import 'achievements.dart';
 import 'body_coverage.dart';
 import 'calendar_screen.dart';
+import 'energy_hours.dart';
 import 'insights.dart';
 import 'models.dart';
+import 'movement_dna.dart';
 import 'storage.dart';
+import 'transitions.dart';
 
 class HistoryScreen extends StatelessWidget {
   final Storage storage;
@@ -26,6 +29,10 @@ class HistoryScreen extends StatelessWidget {
     ).map((a) => a.id).toSet();
     final insights = WeeklyInsights.from(sessions);
     final coverage = BodyCoverage.lastWeek(sessions, DateTime.now());
+    final dna = MovementDna.compute(sessions);
+    final energy = EnergyHours.from(sessions);
+    final hydrationByDay = storage.hydrationByDay(days: 7);
+    final hydrationGoal = storage.hydrationGoalGlasses;
 
     return Scaffold(
       body: SafeArea(
@@ -45,7 +52,7 @@ class HistoryScreen extends StatelessWidget {
                   icon: const Icon(Icons.calendar_month),
                   tooltip: 'Open calendar',
                   onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
+                    Navigator.of(context).push(FadeThroughRoute(
                       builder: (_) => CalendarScreen(storage: storage),
                     ));
                   },
@@ -105,7 +112,13 @@ class HistoryScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _Heatmap(data: mapData),
             const SizedBox(height: 24),
+            MovementDnaCard(dna: dna),
+            const SizedBox(height: 24),
+            EnergyHoursCard(data: energy),
+            const SizedBox(height: 24),
             _BodyCoverageSection(coverage: coverage),
+            const SizedBox(height: 24),
+            _HydrationSection(byDay: hydrationByDay, goal: hydrationGoal),
             const SizedBox(height: 24),
             _AchievementsSection(earnedIds: earned),
             const SizedBox(height: 24),
@@ -985,6 +998,164 @@ class _SessionTile extends StatelessWidget {
                   .textTheme
                   .titleSmall
                   ?.copyWith(fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}
+
+class _HydrationSection extends StatelessWidget {
+  final Map<String, int> byDay;
+  final int goal;
+  const _HydrationSection({required this.byDay, required this.goal});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    const blue = Color(0xFF1E88E5);
+    final entries = byDay.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+    final values = entries.map((e) => e.value).toList();
+    final maxV = (values.isEmpty ? goal : values.reduce((a, b) => a > b ? a : b))
+        .clamp(goal, 9999);
+    final total = values.fold<int>(0, (a, b) => a + b);
+    final daysHit = values.where((v) => v >= goal).length;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('💧', style: TextStyle(fontSize: 20)),
+              const SizedBox(width: 8),
+              Text('Hydration · 7 days',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: blue.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text('$daysHit/7 days hit',
+                    style: const TextStyle(
+                        color: blue,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text('$total glasses logged in the last week.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: scheme.onSurfaceVariant)),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 110,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (int i = 0; i < entries.length; i++)
+                  Expanded(
+                    child: _HydrationBar(
+                      label: _shortDow(entries[i].key),
+                      value: entries[i].value,
+                      goal: goal,
+                      maxV: maxV,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _shortDow(String dayKey) {
+    final parts = dayKey.split('-');
+    if (parts.length != 3) return '';
+    final d = DateTime(
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+      int.parse(parts[2]),
+    );
+    const labels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+    return labels[(d.weekday - 1) % 7];
+  }
+}
+
+class _HydrationBar extends StatelessWidget {
+  final String label;
+  final int value;
+  final int goal;
+  final int maxV;
+  const _HydrationBar({
+    required this.label,
+    required this.value,
+    required this.goal,
+    required this.maxV,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const blue = Color(0xFF1E88E5);
+    final scheme = Theme.of(context).colorScheme;
+    final fill = maxV == 0 ? 0.0 : value / maxV;
+    final hitGoal = value >= goal;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 3),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text('$value',
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurfaceVariant)),
+          const SizedBox(height: 2),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: fill.clamp(0.0, 1.0)),
+              duration: const Duration(milliseconds: 600),
+              builder: (_, v, _) => Container(
+                width: double.infinity,
+                height: (60 * v).clamp(2.0, 60.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: hitGoal
+                        ? [blue, const Color(0xFF64B5F6)]
+                        : [
+                            blue.withValues(alpha: 0.55),
+                            blue.withValues(alpha: 0.35)
+                          ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: scheme.onSurfaceVariant)),
         ],
       ),
     );

@@ -4,14 +4,14 @@ import 'dart:math';
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
-
 import 'achievements.dart';
 import 'models.dart';
 import 'mood_picker.dart';
 import 'note_picker.dart';
+import 'share_card.dart';
 import 'storage.dart';
 import 'tts_service.dart';
+import 'wellness_score.dart';
 
 class SessionScreen extends StatefulWidget {
   final WorkoutPlan plan;
@@ -60,7 +60,10 @@ class _SessionScreenState extends State<SessionScreen>
     setState(() {
       _moodBefore = mb;
     });
-    await _tts.init();
+    await _tts.init(
+      personality:
+          CoachPersonality.values[widget.storage.coachPersonalityIndex],
+    );
     if (!mounted) return;
     _runPreWorkoutCountdown();
   }
@@ -208,6 +211,7 @@ class _SessionScreenState extends State<SessionScreen>
         moodDelta: delta,
         streak: streakAfter,
         freezesEarned: newFreezes,
+        storage: widget.storage,
       ),
     );
     if (!mounted) return;
@@ -491,7 +495,7 @@ class _CountdownOverlay extends StatelessWidget {
   }
 }
 
-class _TimerRing extends StatelessWidget {
+class _TimerRing extends StatefulWidget {
   final double progress;
   final Color accent;
   final int secondsLeft;
@@ -502,6 +506,29 @@ class _TimerRing extends StatelessWidget {
     required this.secondsLeft,
     required this.emoji,
   });
+
+  @override
+  State<_TimerRing> createState() => _TimerRingState();
+}
+
+class _TimerRingState extends State<_TimerRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -515,25 +542,36 @@ class _TimerRing extends StatelessWidget {
             width: 240,
             height: 240,
             child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: progress.clamp(0.0, 1.0)),
+              tween: Tween(begin: 0, end: widget.progress.clamp(0.0, 1.0)),
               duration: const Duration(milliseconds: 700),
               curve: Curves.easeOut,
               builder: (_, val, _) => CircularProgressIndicator(
                 value: val,
                 strokeWidth: 12,
-                backgroundColor: accent.withValues(alpha: 0.18),
-                valueColor: AlwaysStoppedAnimation(accent),
+                backgroundColor: widget.accent.withValues(alpha: 0.18),
+                valueColor: AlwaysStoppedAnimation(widget.accent),
               ),
             ),
           ),
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 60)),
+              AnimatedBuilder(
+                animation: _pulse,
+                builder: (_, _) {
+                  final t = Curves.easeInOut.transform(_pulse.value);
+                  final scale = 0.94 + 0.12 * t;
+                  return Transform.scale(
+                    scale: scale,
+                    child: Text(widget.emoji,
+                        style: const TextStyle(fontSize: 60)),
+                  );
+                },
+              ),
               const SizedBox(height: 6),
-              Text('${secondsLeft.clamp(0, 999)}s',
+              Text('${widget.secondsLeft.clamp(0, 999)}s',
                   style: TextStyle(
-                      color: accent,
+                      color: widget.accent,
                       fontSize: 36,
                       fontWeight: FontWeight.w800)),
             ],
@@ -811,10 +849,12 @@ class _CompletionDialog extends StatefulWidget {
   final int? moodDelta;
   final int streak;
   final int freezesEarned;
+  final Storage storage;
   const _CompletionDialog({
     required this.plan,
     required this.streak,
     required this.freezesEarned,
+    required this.storage,
     this.moodDelta,
   });
 
@@ -824,6 +864,7 @@ class _CompletionDialog extends StatefulWidget {
 
 class _CompletionDialogState extends State<_CompletionDialog> {
   late final ConfettiController _confetti;
+  bool _sharing = false;
 
   @override
   void initState() {
@@ -839,18 +880,34 @@ class _CompletionDialogState extends State<_CompletionDialog> {
   }
 
   Future<void> _share() async {
-    final delta = widget.moodDelta;
-    final mood = delta == null
-        ? ''
-        : delta > 0
-            ? ' Mood +$delta ✨'
-            : delta == 0
-                ? ' Mood steady 🌿'
-                : ' Mood $delta 💭';
-    final streak = widget.streak >= 2 ? '\nStreak: ${widget.streak} 🔥' : '';
-    final text =
-        'Just did a ${widget.plan.formattedDuration} ${widget.plan.title} on MoveMate.$mood$streak\n#MoveMate #PhysTech';
-    await Share.share(text);
+    if (_sharing) return;
+    setState(() => _sharing = true);
+    try {
+      final score = WellnessScore.compute(widget.storage);
+      final data = ShareCardData(
+        planTitle: widget.plan.title,
+        category: widget.plan.primaryCategory,
+        seconds: widget.plan.totalSeconds,
+        moodDelta: widget.moodDelta,
+        currentStreak: widget.streak,
+        wellnessScore: score.total,
+        when: DateTime.now(),
+      );
+      await shareSessionCard(
+        context,
+        data,
+        text:
+            'Just moved with MoveMate — ${widget.plan.formattedDuration} of ${widget.plan.primaryCategory.label.toLowerCase()}. #MoveMate',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Couldn\'t share: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
   }
 
   @override
@@ -925,9 +982,15 @@ class _CompletionDialogState extends State<_CompletionDialog> {
           ),
           actions: [
             TextButton.icon(
-              icon: const Icon(Icons.ios_share),
-              label: const Text('Share'),
-              onPressed: _share,
+              icon: _sharing
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.ios_share),
+              label: Text(_sharing ? 'Rendering…' : 'Share'),
+              onPressed: _sharing ? null : _share,
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),

@@ -17,6 +17,9 @@ class Storage {
   static const _kLastWeeklyReview = 'lastWeeklyReview';
   static const _kLastCelebratedStreak = 'lastCelebratedStreak';
   static const _kThemeMode = 'themeMode'; // 0 = system, 1 = light, 2 = dark
+  static const _kCoachPersonality = 'coachPersonality'; // 0 = calm, 1 = upbeat, 2 = strict
+  static const _kHydrationGoal = 'hydrationGoal';
+  static const _kHydrationLog = 'hydrationLog'; // JSON map: YYYY-MM-DD -> int
 
   static const int maxFreezes = 3;
 
@@ -109,6 +112,63 @@ class Storage {
   int get themeModeIndex => _prefs.getInt(_kThemeMode) ?? 0;
   Future<void> setThemeModeIndex(int v) async {
     await _prefs.setInt(_kThemeMode, v);
+  }
+
+  int get coachPersonalityIndex => _prefs.getInt(_kCoachPersonality) ?? 0;
+  Future<void> setCoachPersonalityIndex(int v) async {
+    await _prefs.setInt(_kCoachPersonality, v);
+  }
+
+  int get hydrationGoalGlasses => _prefs.getInt(_kHydrationGoal) ?? 8;
+  Future<void> setHydrationGoalGlasses(int v) async {
+    await _prefs.setInt(_kHydrationGoal, v);
+  }
+
+  Map<String, int> get hydrationLog {
+    final raw = _prefs.getString(_kHydrationLog);
+    if (raw == null || raw.isEmpty) return const {};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map((k, v) => MapEntry(k, (v as num).toInt()));
+  }
+
+  Future<void> _writeHydrationLog(Map<String, int> log) async {
+    await _prefs.setString(_kHydrationLog, jsonEncode(log));
+  }
+
+  int get glassesToday {
+    final key = _dayKey(DateTime.now());
+    return hydrationLog[key] ?? 0;
+  }
+
+  Future<void> addGlass() async {
+    final log = Map<String, int>.from(hydrationLog);
+    final key = _dayKey(DateTime.now());
+    log[key] = (log[key] ?? 0) + 1;
+    await _writeHydrationLog(log);
+  }
+
+  Future<void> removeGlass() async {
+    final log = Map<String, int>.from(hydrationLog);
+    final key = _dayKey(DateTime.now());
+    final cur = log[key] ?? 0;
+    if (cur <= 1) {
+      log.remove(key);
+    } else {
+      log[key] = cur - 1;
+    }
+    await _writeHydrationLog(log);
+  }
+
+  Map<String, int> hydrationByDay({int days = 7}) {
+    final result = <String, int>{};
+    final now = DateTime.now();
+    final log = hydrationLog;
+    for (int i = 0; i < days; i++) {
+      final d = now.subtract(Duration(days: i));
+      final key = _dayKey(d);
+      result[key] = log[key] ?? 0;
+    }
+    return result;
   }
 
   /// Grants freezes when the user crosses a 7-day streak boundary that we

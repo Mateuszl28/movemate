@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'models.dart';
@@ -141,31 +143,7 @@ class _WelcomePage extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          _AnimatedHero(
-            child: Container(
-              width: 200,
-              height: 200,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [scheme.primary, scheme.tertiary],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: scheme.primary.withValues(alpha: 0.4),
-                    blurRadius: 40,
-                    spreadRadius: 4,
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: Text('🤸',
-                    style: TextStyle(fontSize: 110)),
-              ),
-            ),
-          ),
+          const Center(child: _OrbitalHero(size: 240)),
           const SizedBox(height: 32),
           Text('Welcome to MoveMate',
               maxLines: 2,
@@ -419,6 +397,161 @@ class _ProfileTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _OrbitalHero extends StatefulWidget {
+  final double size;
+  const _OrbitalHero({this.size = 220});
+
+  @override
+  State<_OrbitalHero> createState() => _OrbitalHeroState();
+}
+
+class _OrbitalHeroState extends State<_OrbitalHero>
+    with TickerProviderStateMixin {
+  late final AnimationController _spin;
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _spin = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 14),
+    )..repeat();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _spin.dispose();
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return SizedBox(
+      width: widget.size,
+      height: widget.size,
+      child: AnimatedBuilder(
+        animation: Listenable.merge([_spin, _pulse]),
+        builder: (_, _) {
+          return CustomPaint(
+            painter: _OrbitalPainter(
+              t: _spin.value,
+              pulse: _pulse.value,
+              primary: scheme.primary,
+              secondary: scheme.tertiary,
+              ring: scheme.outline.withValues(alpha: 0.18),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _OrbitalPainter extends CustomPainter {
+  final double t; // 0..1, full rotation
+  final double pulse; // 0..1
+  final Color primary;
+  final Color secondary;
+  final Color ring;
+
+  _OrbitalPainter({
+    required this.t,
+    required this.pulse,
+    required this.primary,
+    required this.secondary,
+    required this.ring,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxR = size.shortestSide / 2;
+    final pulseEased = Curves.easeInOut.transform(pulse);
+
+    final glowR = maxR * (0.42 + pulseEased * 0.06);
+    canvas.drawCircle(
+      center,
+      glowR + 18,
+      Paint()
+        ..color = primary.withValues(alpha: 0.18)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+    );
+
+    final ringPaint = Paint()
+      ..color = ring
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4;
+    for (final f in const [0.6, 0.78, 0.95]) {
+      canvas.drawCircle(center, maxR * f, ringPaint);
+    }
+
+    final orbits = [
+      (radius: maxR * 0.6, speed: -1.0, count: 5, color: primary, dotSize: 7.0),
+      (radius: maxR * 0.78, speed: 0.65, count: 7, color: secondary, dotSize: 5.5),
+      (radius: maxR * 0.95, speed: -0.4, count: 9, color: primary.withValues(alpha: 0.7), dotSize: 4.0),
+    ];
+
+    for (final o in orbits) {
+      for (int i = 0; i < o.count; i++) {
+        final angle =
+            t * 2 * pi * o.speed + i * (2 * pi / o.count);
+        final x = center.dx + cos(angle) * o.radius;
+        final y = center.dy + sin(angle) * o.radius;
+        canvas.drawCircle(
+          Offset(x, y),
+          o.dotSize,
+          Paint()..color = o.color,
+        );
+      }
+    }
+
+    final coreGradient = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          primary,
+          primary.withValues(alpha: 0.6),
+          secondary.withValues(alpha: 0.6),
+        ],
+        stops: const [0.0, 0.6, 1.0],
+      ).createShader(
+        Rect.fromCircle(center: center, radius: glowR),
+      );
+    canvas.drawCircle(center, glowR, coreGradient);
+
+    canvas.drawCircle(
+      center,
+      glowR,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.20)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.6,
+    );
+
+    final tp = TextPainter(
+      text: TextSpan(
+        text: '⚡',
+        style: TextStyle(fontSize: glowR * 0.85),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(
+      canvas,
+      Offset(center.dx - tp.width / 2, center.dy - tp.height / 2),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _OrbitalPainter old) =>
+      old.t != t || old.pulse != pulse;
 }
 
 class _AnimatedHero extends StatefulWidget {
