@@ -116,19 +116,30 @@ class SessionRecord {
   final String planTitle;
   final ExerciseCategory category;
   final int seconds;
+  final int? moodBefore; // 1..5
+  final int? moodAfter;  // 1..5
 
   SessionRecord({
     required this.completedAt,
     required this.planTitle,
     required this.category,
     required this.seconds,
+    this.moodBefore,
+    this.moodAfter,
   });
+
+  int? get moodDelta {
+    if (moodBefore == null || moodAfter == null) return null;
+    return moodAfter! - moodBefore!;
+  }
 
   Map<String, dynamic> toJson() => {
         't': completedAt.toIso8601String(),
         'p': planTitle,
         'c': category.index,
         's': seconds,
+        if (moodBefore != null) 'mb': moodBefore,
+        if (moodAfter != null) 'ma': moodAfter,
       };
 
   factory SessionRecord.fromJson(Map<String, dynamic> json) => SessionRecord(
@@ -136,5 +147,7 @@ class SessionRecord {
         planTitle: json['p'] as String,
         category: ExerciseCategory.values[json['c'] as int],
         seconds: json['s'] as int,
+        moodBefore: json['mb'] as int?,
+        moodAfter: json['ma'] as int?,
       );
 }

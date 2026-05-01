@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'achievements.dart';
+import 'insights.dart';
 import 'models.dart';
 import 'storage.dart';
 
@@ -21,6 +22,7 @@ class HistoryScreen extends StatelessWidget {
       streak,
       storage.dailyGoalMinutes,
     ).map((a) => a.id).toSet();
+    final insights = WeeklyInsights.from(sessions);
 
     return Scaffold(
       body: SafeArea(
@@ -65,6 +67,16 @@ class HistoryScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
+            Text('This week',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            _WeeklyBarChart(insights: insights, goal: storage.dailyGoalMinutes),
+            const SizedBox(height: 12),
+            _InsightsCard(bullets: insights.bullets),
+            const SizedBox(height: 24),
             Text('Activity (28 days)',
                 style: Theme.of(context)
                     .textTheme
@@ -108,6 +120,200 @@ class HistoryScreen extends StatelessWidget {
                   )),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _WeeklyBarChart extends StatelessWidget {
+  final WeeklyInsights insights;
+  final int goal;
+  const _WeeklyBarChart({required this.insights, required this.goal});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final maxMin = insights.last7Days
+        .fold<int>(goal, (m, d) => d.minutes > m ? d.minutes : m)
+        .clamp(1, 9999);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('${insights.totalMinutes}',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text('min total',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant)),
+              ),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text('Goal $goal min/day',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w700)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 140,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                for (final d in insights.last7Days)
+                  Expanded(
+                    child: _BarColumn(
+                      bar: d,
+                      maxMin: maxMin,
+                      goal: goal,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BarColumn extends StatelessWidget {
+  final DayBar bar;
+  final int maxMin;
+  final int goal;
+  const _BarColumn(
+      {required this.bar, required this.maxMin, required this.goal});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final ratio = (bar.minutes / maxMin).clamp(0.0, 1.0);
+    final hitGoal = bar.minutes >= goal && goal > 0;
+    final isToday = _isToday(bar.date);
+    final color = bar.minutes == 0
+        ? scheme.surfaceContainerHighest
+        : (hitGoal ? scheme.primary : scheme.primary.withValues(alpha: 0.55));
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          if (bar.minutes > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text('${bar.minutes}',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurface,
+                      fontWeight: FontWeight.w800)),
+            ),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: ratio),
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
+            builder: (_, val, _) => Container(
+              height: 110 * val + 6,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(8),
+                  bottom: Radius.circular(4),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(bar.label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: isToday ? scheme.primary : scheme.onSurfaceVariant,
+                    fontWeight:
+                        isToday ? FontWeight.w800 : FontWeight.w600,
+                  )),
+        ],
+      ),
+    );
+  }
+
+  static bool _isToday(DateTime d) {
+    final now = DateTime.now();
+    return d.year == now.year && d.month == now.month && d.day == now.day;
+  }
+}
+
+class _InsightsCard extends StatelessWidget {
+  final List<String> bullets;
+  const _InsightsCard({required this.bullets});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.tips_and_updates_outlined,
+                  size: 20, color: scheme.primary),
+              const SizedBox(width: 8),
+              Text('Insights',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleSmall
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (final b in bullets)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, right: 8),
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: scheme.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(b,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: scheme.onSurface, height: 1.35)),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

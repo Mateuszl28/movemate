@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:math';
 
+import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'achievements.dart';
 import 'models.dart';
+import 'mood_picker.dart';
 import 'storage.dart';
 import 'tts_service.dart';
 
@@ -27,6 +30,8 @@ class _SessionScreenState extends State<SessionScreen>
   Timer? _timer;
   Timer? _countdownTimer;
   int? _countdown;
+  int? _moodBefore;
+  int? _moodAfter;
   final TtsService _tts = TtsService();
 
   Exercise get _current => widget.plan.exercises[_currentIndex];
@@ -35,10 +40,24 @@ class _SessionScreenState extends State<SessionScreen>
   void initState() {
     super.initState();
     _remainingSeconds = _current.seconds;
-    _initTtsAndStart();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _runMoodFlowAndStart();
+    });
   }
 
-  Future<void> _initTtsAndStart() async {
+  Future<void> _runMoodFlowAndStart() async {
+    final mb = await askForMood(
+      context,
+      title: 'How do you feel right now?',
+      subtitle:
+          'A quick check-in helps us see how movement changes your mood.',
+      confirmLabel: 'Start session',
+      skipLabel: 'Skip',
+    );
+    if (!mounted) return;
+    setState(() {
+      _moodBefore = mb;
+    });
     await _tts.init();
     if (!mounted) return;
     _runPreWorkoutCountdown();
@@ -131,11 +150,24 @@ class _SessionScreenState extends State<SessionScreen>
     _completed = true;
     HapticFeedback.heavyImpact();
     await _tts.speak('Well done! Session complete.');
+
+    if (!mounted) return;
+    final ma = await askForMood(
+      context,
+      title: 'How do you feel now?',
+      subtitle: 'Tap how you feel after the session.',
+      confirmLabel: 'Save',
+      skipLabel: 'Skip',
+    );
+    _moodAfter = ma;
+
     await widget.storage.addSession(SessionRecord(
       completedAt: DateTime.now(),
       planTitle: widget.plan.title,
       category: widget.plan.primaryCategory,
       seconds: widget.plan.totalSeconds,
+      moodBefore: _moodBefore,
+      moodAfter: _moodAfter,
     ));
 
     final earned = AchievementCatalog.earned(
@@ -151,10 +183,14 @@ class _SessionScreenState extends State<SessionScreen>
     }
 
     if (!mounted) return;
+    final delta = (_moodBefore != null && _moodAfter != null)
+        ? _moodAfter! - _moodBefore!
+        : null;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => _CompletionDialog(plan: widget.plan),
+      builder: (_) =>
+          _CompletionDialog(plan: widget.plan, moodDelta: delta),
     );
     if (!mounted) return;
     if (newlyEarned.isNotEmpty) {
@@ -568,43 +604,144 @@ class _AchievementsUnlockedDialog extends StatelessWidget {
   }
 }
 
-class _CompletionDialog extends StatelessWidget {
+class _CompletionDialog extends StatefulWidget {
   final WorkoutPlan plan;
-  const _CompletionDialog({required this.plan});
+  final int? moodDelta;
+  const _CompletionDialog({required this.plan, this.moodDelta});
+
+  @override
+  State<_CompletionDialog> createState() => _CompletionDialogState();
+}
+
+class _CompletionDialogState extends State<_CompletionDialog> {
+  late final ConfettiController _confetti;
+
+  @override
+  void initState() {
+    super.initState();
+    _confetti = ConfettiController(duration: const Duration(seconds: 2));
+    WidgetsBinding.instance.addPostFrameCallback((_) => _confetti.play());
+  }
+
+  @override
+  void dispose() {
+    _confetti.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('🎉', style: TextStyle(fontSize: 64)),
-          const SizedBox(height: 12),
-          Text('Session complete!',
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          Text('${plan.title} • ${plan.formattedDuration}',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 6),
-          Text('Your streak is growing. Great job!',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        ],
-      ),
-      actions: [
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Awesome'),
+    final delta = widget.moodDelta;
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🎉', style: TextStyle(fontSize: 64)),
+              const SizedBox(height: 12),
+              Text('Session complete!',
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 8),
+              Text(
+                  '${widget.plan.title} • ${widget.plan.formattedDuration}',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color:
+                          Theme.of(context).colorScheme.onSurfaceVariant)),
+              if (delta != null) ...[
+                const SizedBox(height: 14),
+                _MoodDeltaBadge(delta: delta),
+              ],
+              const SizedBox(height: 8),
+              Text('Your streak is growing. Great job!',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color:
+                          Theme.of(context).colorScheme.onSurfaceVariant)),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Awesome'),
+            ),
+          ],
+        ),
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: _confetti,
+            blastDirection: pi / 2,
+            blastDirectionality: BlastDirectionality.explosive,
+            emissionFrequency: 0.05,
+            numberOfParticles: 18,
+            maxBlastForce: 25,
+            minBlastForce: 8,
+            gravity: 0.25,
+            shouldLoop: false,
+            colors: const [
+              Color(0xFF2EB872),
+              Color(0xFF7BC67E),
+              Color(0xFFFFB74D),
+              Color(0xFF64B5F6),
+              Color(0xFFE57373),
+            ],
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _MoodDeltaBadge extends StatelessWidget {
+  final int delta;
+  const _MoodDeltaBadge({required this.delta});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final positive = delta > 0;
+    final neutral = delta == 0;
+    final color = positive
+        ? const Color(0xFF2EB872)
+        : neutral
+            ? scheme.onSurfaceVariant
+            : const Color(0xFFE57373);
+    final emoji = positive ? '✨' : (neutral ? '🌿' : '💭');
+    final label = positive
+        ? 'Mood +$delta — movement helped!'
+        : neutral
+            ? 'Mood stayed steady — nice grounding.'
+            : 'Mood ${delta.toString()} — a deeper reset might help.';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(label,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: color,
+                      fontWeight: FontWeight.w800,
+                    )),
+          ),
+        ],
+      ),
     );
   }
 }
