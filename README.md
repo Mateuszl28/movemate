@@ -1,64 +1,64 @@
 # MoveMate
 
-Mobilny coach mikroaktywności fizycznej — aplikacja Flutter zbudowana na hackathon **PhysTech**.
+A mobile micro-activity coach — Flutter app built for the **PhysTech** hackathon.
 
-MoveMate przypomina o krótkich przerwach na ruch w ciągu dnia, prowadzi przez sesje ćwiczeń i oddechu, a przy okazji śledzi nastrój, samopoczucie i postępy. Zaprojektowany pod Androida, działa offline.
+MoveMate nudges you to take short movement breaks during the day, guides you through exercise and breathing sessions, and tracks your mood, wellbeing, and progress along the way. Designed for Android, works offline.
 
-## Co potrafi
+## Features
 
-- **Sesje ruchu i oddechu** — krótkie ćwiczenia z prowadzeniem głosowym (TTS), prowadzony oddech, ekran skupienia
-- **Inteligentny coach** — rekomendacje dopasowane do pory dnia, nastroju i historii (`smart_coach.dart`, `recommendations.dart`)
-- **Powiadomienia** — konfigurowalne przypomnienia o ruchu w wybranych odstępach (`flutter_local_notifications` + `timezone`)
-- **Streak z „freezami"** — system serii dziennej z dniami ochronnymi
-- **Wellness Score, Movement DNA, Energy Hours** — wskaźniki samopoczucia, profil aktywności i mapa godzin energii
-- **Mood & notatki** — szybki wybór nastroju, notatki do sesji
-- **Body coverage** — wizualizacja, które partie ciała były pracowane
-- **Achievementy, dzienne wyzwanie, mantra dnia, weekly review**
-- **Kalendarz historii**, eksport / udostępnianie podsumowań (share card)
-- **Onboarding**, motyw jasny/ciemny, ustawienia
+- **Movement and breathing sessions** — short exercises with voice guidance (TTS), guided breathing, focus screen
+- **Smart coach** — recommendations tailored to time of day, mood, and history (`smart_coach.dart`, `recommendations.dart`)
+- **Notifications** — configurable movement reminders at chosen intervals (`flutter_local_notifications` + `timezone`)
+- **Streak with freezes** — daily streak system with protection days
+- **Wellness Score, Movement DNA, Energy Hours** — wellbeing indicators, activity profile, and an energy-by-hour map
+- **Mood & notes** — quick mood picker, per-session notes
+- **Body coverage** — visualization of which body parts were trained
+- **Achievements, daily challenge, daily mantra, weekly review**
+- **History calendar**, export / share summaries (share card)
+- **Onboarding**, light/dark theme, settings
 
-## Stos technologiczny
+## Tech stack
 
 - **Flutter** (Dart SDK `^3.11.0`), Material 3
-- **shared_preferences** — lokalna pamięć stanu
-- **flutter_tts** — synteza mowy
-- **flutter_local_notifications** + **timezone** + **flutter_timezone** — zaplanowane przypomnienia
+- **shared_preferences** — local state persistence
+- **flutter_tts** — speech synthesis
+- **flutter_local_notifications** + **timezone** + **flutter_timezone** — scheduled reminders
 - **intl**, **confetti**, **share_plus**, **path_provider**
 
-## Uruchomienie
+## Getting started
 
-Wymagania: Flutter SDK 3.11+, Android SDK, urządzenie / emulator (ADB).
+Requirements: Flutter SDK 3.11+, Android SDK, a device or emulator (ADB).
 
 ```powershell
 flutter pub get
 flutter run
 ```
 
-Build APK release:
+Release APK build:
 
 ```powershell
 flutter build apk --release
 ```
 
-## Struktura projektu
+## Project structure
 
-Cały kod aplikacji znajduje się w `lib/`:
+All app code lives in `lib/`:
 
-| Plik | Rola |
+| File | Role |
 |---|---|
-| `main.dart` | Punkt wejścia, motyw, routing onboarding ↔ aplikacja |
-| `home_screen.dart` | Główny ekran z dashboardem |
-| `session_screen.dart`, `breathing_screen.dart`, `focus_screen.dart` | Sesje aktywne |
-| `exercise_library.dart`, `custom_builder.dart` | Biblioteka i kreator ćwiczeń |
-| `smart_coach.dart`, `recommendations.dart` | Logika rekomendacji |
-| `storage.dart`, `models.dart` | Persystencja i modele danych |
-| `notification_service.dart`, `tts_service.dart` | Powiadomienia, mowa |
-| `wellness_score.dart`, `movement_dna.dart`, `energy_hours.dart`, `body_coverage.dart`, `insights.dart` | Analityka i wskaźniki |
-| `achievements.dart`, `daily_challenge.dart`, `daily_mantra.dart`, `weekly_review.dart` | Grywalizacja i podsumowania |
-| `history_screen.dart`, `calendar_screen.dart` | Historia sesji |
-| `settings_screen.dart`, `onboarding_screen.dart` | Ustawienia i pierwsze uruchomienie |
-| `mood_picker.dart`, `note_picker.dart`, `share_card.dart`, `transitions.dart`, `wellness_detail_screen.dart` | UI komponenty |
+| `main.dart` | Entry point, theming, onboarding ↔ app routing |
+| `home_screen.dart` | Main dashboard screen |
+| `session_screen.dart`, `breathing_screen.dart`, `focus_screen.dart` | Active sessions |
+| `exercise_library.dart`, `custom_builder.dart` | Exercise library and custom builder |
+| `smart_coach.dart`, `recommendations.dart` | Recommendation logic |
+| `storage.dart`, `models.dart` | Persistence and data models |
+| `notification_service.dart`, `tts_service.dart` | Notifications, speech |
+| `wellness_score.dart`, `movement_dna.dart`, `energy_hours.dart`, `body_coverage.dart`, `insights.dart` | Analytics and indicators |
+| `achievements.dart`, `daily_challenge.dart`, `daily_mantra.dart`, `weekly_review.dart` | Gamification and summaries |
+| `history_screen.dart`, `calendar_screen.dart` | Session history |
+| `settings_screen.dart`, `onboarding_screen.dart` | Settings and first run |
+| `mood_picker.dart`, `note_picker.dart`, `share_card.dart`, `transitions.dart`, `wellness_detail_screen.dart` | UI components |
 
-## Wersja
+## Version
 
-`1.0.0+1` (`pubspec.yaml`). Tagi developerskie w historii git: `V.0.0.0.0.0.1.x`.
+`1.0.0+1` (`pubspec.yaml`). Dev tags in git history: `V.0.0.0.0.0.1.x`.
