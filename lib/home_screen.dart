@@ -100,6 +100,11 @@ class HomeScreen extends StatelessWidget {
           _startPlan(context, plan);
         },
       ),
+      _MoodCheckInCard(
+        storage: storage,
+        now: now,
+        onLogged: onSessionComplete,
+      ),
       _TodayCard(
         storage: storage,
         now: now,
