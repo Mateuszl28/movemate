@@ -1070,6 +1070,137 @@ class _Chip extends StatelessWidget {
   }
 }
 
+/// Celebration hero — picks the best stat from recent activity and surfaces it
+/// as a gradient card so the user sees their wins, not just their nags.
+class _MomentOfPrideCard extends StatelessWidget {
+  final MomentOfPride pride;
+  const _MomentOfPrideCard({required this.pride});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _gradientFor(pride.kind);
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: colors,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colors.first.withValues(alpha: 0.30),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          Positioned(
+            top: -30,
+            right: -30,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: -40,
+            left: -20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.06),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Text(pride.emoji,
+                      style: const TextStyle(fontSize: 32)),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Moment of pride',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                          )),
+                      const SizedBox(height: 2),
+                      Text(pride.headline,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            height: 1.15,
+                          )),
+                      const SizedBox(height: 4),
+                      Text(pride.subline,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.92),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            height: 1.3,
+                          )),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static List<Color> _gradientFor(PrideKind kind) {
+    switch (kind) {
+      case PrideKind.painDrop:
+        return const [Color(0xFFFF6F61), Color(0xFFD84315)];
+      case PrideKind.streak:
+        return const [Color(0xFFFFB300), Color(0xFFFF6F00)];
+      case PrideKind.weekGrowth:
+        return const [Color(0xFF42A5F5), Color(0xFF1E88E5)];
+      case PrideKind.milestone:
+        return const [Color(0xFF7C4DFF), Color(0xFF512DA8)];
+      case PrideKind.moodLift:
+        return const [Color(0xFFAB47BC), Color(0xFF7B1FA2)];
+      case PrideKind.variety:
+        return const [Color(0xFF26A69A), Color(0xFF00897B)];
+      case PrideKind.comeback:
+        return const [Color(0xFF66BB6A), Color(0xFF388E3C)];
+    }
+  }
+}
+
 /// Coach lines + the day's mantra collapsed into one card. Mantra is rendered
 /// as a slim header strip; coach lines fill the body.
 class _SmartCoachCard extends StatelessWidget {
