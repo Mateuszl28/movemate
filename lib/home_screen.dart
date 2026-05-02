@@ -143,6 +143,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
+      if (yesterdayStats != null) _YesterdayRecapCard(stats: yesterdayStats),
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
