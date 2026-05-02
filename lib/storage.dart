@@ -665,6 +665,17 @@ class Storage {
     return (secs / 60).round();
   }
 
+  String? get lastGoalCelebratedDay =>
+      _prefs.getString(_kLastGoalCelebrated);
+
+  bool get goalAlreadyCelebratedToday =>
+      lastGoalCelebratedDay == _dayKey(DateTime.now());
+
+  Future<void> markGoalCelebratedToday() async {
+    await _prefs.setString(
+        _kLastGoalCelebrated, _dayKey(DateTime.now()));
+  }
+
   int get weekMinutes {
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
     final secs = sessions
