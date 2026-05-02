@@ -961,13 +961,23 @@ class _AchievementsSection extends StatelessWidget {
 class _BadgeTile extends StatelessWidget {
   final Achievement achievement;
   final bool earned;
-  const _BadgeTile({required this.achievement, required this.earned});
+  final AchievementProgress? progress;
+  const _BadgeTile({
+    required this.achievement,
+    required this.earned,
+    this.progress,
+  });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final showProgress =
+        !earned && progress != null && progress!.target > 0;
+    final tooltipMsg = showProgress
+        ? '${achievement.name}\n${achievement.description}\n${progress!.current}/${progress!.target}'
+        : '${achievement.name}\n${achievement.description}';
     return Tooltip(
-      message: '${achievement.name}\n${achievement.description}',
+      message: tooltipMsg,
       preferBelow: false,
       child: Container(
         padding: const EdgeInsets.all(6),
@@ -1007,6 +1017,30 @@ class _BadgeTile extends StatelessWidget {
                     ),
               ),
             ),
+            if (showProgress) ...[
+              const SizedBox(height: 4),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: progress!.ratio,
+                  minHeight: 3,
+                  backgroundColor:
+                      scheme.outline.withValues(alpha: 0.18),
+                  valueColor: AlwaysStoppedAnimation(
+                    scheme.primary.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${progress!.current}/${progress!.target}',
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
         ),
       ),
