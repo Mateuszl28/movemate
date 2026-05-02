@@ -234,6 +234,7 @@ class AchievementCatalog {
       description: 'Log sleep at least 5 nights in a week.',
       emoji: '🌙',
       check: (s) => s.sleepEntriesWeek >= 5,
+      progress: (s) => (s.sleepEntriesWeek.clamp(0, 5), 5),
     ),
     Achievement(
       id: 'grounded',
