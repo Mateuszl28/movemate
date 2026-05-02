@@ -12,8 +12,11 @@ MoveMate nudges you to take short movement breaks during the day, guides you thr
 - **Streak with freezes** — daily streak system with protection days
 - **Wellness Score, Movement DNA, Energy Hours** — wellbeing indicators, activity profile, and an energy-by-hour map
 - **Eye Break (20-20-20)** — guided 30-second three-phase eye-rest with TTS prompts (`eye_break_screen.dart`)
+- **Walk Break** — 1 / 2 / 5-min standing-and-walking timer with TTS cues; logs as cardio (`walk_break_screen.dart`)
 - **Posture Check** — 5-question interactive self-check with score, weak-spot tags, and a tailored 3-min follow-up flow (`posture_check_screen.dart`)
 - **Hydration tracking** — daily glass goal with a home-screen pill
+- **Energy check-in** — quick 1-5 emoji tap that feeds the Smart Coach and recommender
+- **Quiet hours** — configurable window that silences reminder notifications (wraps past midnight)
 - **Mood & notes** — quick mood picker, per-session notes
 - **Body coverage** — visualization of which body parts were trained
 - **Achievements, daily challenge, daily mantra, weekly review**
