@@ -134,6 +134,9 @@ account.
   midnight
 - **Test notification button** — preview what a real reminder looks like
   before relying on the schedule
+- **Voice personality preview** — tap-to-hear button next to each Coach
+  option in Settings (Calm / Upbeat / Strict) that speaks a sample line
+  using that profile's rate + pitch so users can pick by ear
 - **Backup / export** — share a JSON dump of all settings, sessions, and
   logs via the system share sheet
 - **Demo seeder** — Settings tile that loads a 30-day realistic snapshot
