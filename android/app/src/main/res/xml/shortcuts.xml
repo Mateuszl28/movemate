@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="pain_journal"
+        android:enabled="true"
+        android:icon="@drawable/splash_logo"
+        android:shortcutShortLabel="@string/shortcut_pain_short"
+        android:shortcutLongLabel="@string/shortcut_pain_long">
+        <intent
+            android:action="pl.movemate.movemate.OPEN_PAIN"
+            android:targetPackage="pl.movemate.movemate"
+            android:targetClass="pl.movemate.movemate.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="quick_stretch"
+        android:enabled="true"
+        android:icon="@drawable/splash_logo"
+        android:shortcutShortLabel="@string/shortcut_stretch_short"
+        android:shortcutLongLabel="@string/shortcut_stretch_long">
+        <intent
+            android:action="pl.movemate.movemate.OPEN_STRETCH"
+            android:targetPackage="pl.movemate.movemate"
+            android:targetClass="pl.movemate.movemate.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="breathing"
+        android:enabled="true"
+        android:icon="@drawable/splash_logo"
+        android:shortcutShortLabel="@string/shortcut_breath_short"
+        android:shortcutLongLabel="@string/shortcut_breath_long">
+        <intent
+            android:action="pl.movemate.movemate.OPEN_BREATHING"
+            android:targetPackage="pl.movemate.movemate"
+            android:targetClass="pl.movemate.movemate.MainActivity" />
+    </shortcut>
+</shortcuts>

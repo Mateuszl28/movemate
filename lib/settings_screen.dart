@@ -232,6 +232,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   .onSurfaceVariant),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.notifications_active, size: 18),
+                      label: const Text('Send test notification'),
+                      onPressed: () async {
+                        await NotificationService.instance.showTestNow();
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Sent — pull down notifications to preview.'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),

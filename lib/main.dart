@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'breathing_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 import 'notification_service.dart';
 import 'onboarding_screen.dart';
+import 'pain_journal_screen.dart';
+import 'recommendations.dart';
+import 'session_screen.dart';
 import 'settings_screen.dart';
 import 'storage.dart';
 import 'tools_screen.dart';
+import 'transitions.dart';
 import 'weekly_review.dart';
 
 Future<void> main() async {
@@ -114,11 +119,52 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _index = 0;
   bool _reminderShown = false;
+  static const _shortcutChannel =
+      MethodChannel('pl.movemate.movemate/shortcuts');
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowReminder());
+    _shortcutChannel.setMethodCallHandler((call) async {
+      if (call.method == 'shortcut' && call.arguments is String) {
+        _handleShortcut(call.arguments as String);
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _maybeShowReminder();
+      try {
+        final pending =
+            await _shortcutChannel.invokeMethod<String?>('consume');
+        if (pending != null && mounted) {
+          _handleShortcut(pending);
+        }
+      } catch (_) {/* channel not wired in tests */}
+    });
+  }
+
+  void _handleShortcut(String action) {
+    if (!mounted) return;
+    switch (action) {
+      case 'pain':
+        Navigator.of(context).push(FadeThroughRoute(
+          builder: (_) => PainJournalScreen(storage: widget.storage),
+        ));
+        break;
+      case 'stretch':
+        final rec = Recommender.pick(widget.storage);
+        Navigator.of(context).push(FadeThroughRoute(
+          builder: (_) => SessionScreen(
+            plan: rec.plan,
+            storage: widget.storage,
+          ),
+        )).then((_) => _refresh());
+        break;
+      case 'breathing':
+        Navigator.of(context).push(FadeThroughRoute(
+          builder: (_) => BreathingScreen(storage: widget.storage),
+        ));
+        break;
+    }
   }
 
   void _maybeShowReminder() {

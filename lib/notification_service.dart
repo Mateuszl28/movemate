@@ -119,6 +119,28 @@ class NotificationService {
     }
   }
 
+  /// Fires a notification immediately. Used by the Settings "test reminder"
+  /// action so users can preview the look + feel of a real nudge.
+  Future<void> showTestNow() async {
+    if (!_initialized) await init();
+    const details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: '@mipmap/ic_launcher',
+      ),
+    );
+    await _plugin.show(
+      _reminderIdBase - 1,
+      'MoveMate',
+      '👋 This is what a reminder will look like.',
+      details,
+    );
+  }
+
   static bool _isHourQuiet(int hour, int start, int end) {
     if (start == end) return false;
     if (start < end) return hour >= start && hour < end;

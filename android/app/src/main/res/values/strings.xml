@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcut_pain_short">Pain</string>
+    <string name="shortcut_pain_long">Open pain journal</string>
+    <string name="shortcut_stretch_short">Stretch</string>
+    <string name="shortcut_stretch_long">Quick stretch</string>
+    <string name="shortcut_breath_short">Breathe</string>
+    <string name="shortcut_breath_long">4-7-8 breathing</string>
+</resources>
