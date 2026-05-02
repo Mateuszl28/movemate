@@ -69,7 +69,7 @@ class _RadarPainter extends CustomPainter {
     final radius = size.shortestSide / 2 - 28;
     final n = axes.length;
     // Start at -pi/2 so the first axis points straight up.
-    final angleOf = (int i) => -pi / 2 + (2 * pi * i) / n;
+    double angleOf(int i) => -pi / 2 + (2 * pi * i) / n;
 
     // 4 concentric grid rings + spokes.
     final ringPaint = Paint()
