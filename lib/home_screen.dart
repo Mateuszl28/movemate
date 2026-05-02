@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import 'adaptive_plan.dart';
 import 'animated_widgets.dart';
 import 'daily_challenge.dart';
 import 'daily_mantra.dart';
@@ -13,6 +14,7 @@ import 'smart_coach.dart';
 import 'storage.dart';
 import 'tools_screen.dart' show PressableCard;
 import 'transitions.dart';
+import 'weekly_plan_screen.dart';
 import 'wellness_detail_screen.dart';
 import 'wellness_score.dart';
 
