@@ -239,6 +239,20 @@ class Storage {
 
   bool get hasRunPostureCheck => postureLog.isNotEmpty;
 
+  /// Returns a JSON-encoded snapshot of every key currently stored. Includes a
+  /// version + timestamp so future imports can validate the payload. Lists are
+  /// preserved as native JSON arrays.
+  String exportAll() {
+    final out = <String, dynamic>{
+      '__movemate__': 1,
+      '__exportedAt__': DateTime.now().toIso8601String(),
+      'data': <String, dynamic>{
+        for (final key in _prefs.getKeys()) key: _prefs.get(key),
+      },
+    };
+    return jsonEncode(out);
+  }
+
   /// Quiet hours: notifications are skipped when the slot's hour falls inside
   /// [quietHoursStart, quietHoursEnd). The window may wrap past midnight
   /// (e.g. 22 → 8 means 22:00..23:59 plus 00:00..07:59 are quiet).
