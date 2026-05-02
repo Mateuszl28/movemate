@@ -816,6 +816,122 @@ class _StreakMilestoneDialogState extends State<_StreakMilestoneDialog> {
   }
 }
 
+class _DailyGoalDialog extends StatefulWidget {
+  final int minutes;
+  final int goal;
+  const _DailyGoalDialog({required this.minutes, required this.goal});
+
+  @override
+  State<_DailyGoalDialog> createState() => _DailyGoalDialogState();
+}
+
+class _DailyGoalDialogState extends State<_DailyGoalDialog> {
+  late final ConfettiController _confetti;
+
+  @override
+  void initState() {
+    super.initState();
+    _confetti = ConfettiController(duration: const Duration(seconds: 2));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      HapticFeedback.heavyImpact();
+      _confetti.play();
+    });
+  }
+
+  @override
+  void dispose() {
+    _confetti.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final extra = widget.minutes - widget.goal;
+    return Stack(
+      alignment: Alignment.topCenter,
+      children: [
+        AlertDialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(28)),
+          contentPadding: const EdgeInsets.fromLTRB(28, 32, 28, 16),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 116,
+                height: 116,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF50C878), Color(0xFF2EB872)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          const Color(0xFF50C878).withValues(alpha: 0.6),
+                      blurRadius: 36,
+                      spreadRadius: 4,
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text('🎯', style: TextStyle(fontSize: 56)),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text('Daily goal hit!',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .headlineSmall
+                      ?.copyWith(fontWeight: FontWeight.w900)),
+              const SizedBox(height: 8),
+              Text(
+                  extra > 0
+                      ? '${widget.minutes} minutes today — ${extra} past your ${widget.goal}-min goal.'
+                      : '${widget.minutes} minutes today — goal reached.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color:
+                          Theme.of(context).colorScheme.onSurfaceVariant,
+                      height: 1.4)),
+            ],
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Nice!',
+                  style: TextStyle(fontWeight: FontWeight.w800)),
+            ),
+          ],
+        ),
+        Align(
+          alignment: Alignment.topCenter,
+          child: ConfettiWidget(
+            confettiController: _confetti,
+            blastDirection: pi / 2,
+            blastDirectionality: BlastDirectionality.explosive,
+            emissionFrequency: 0.04,
+            numberOfParticles: 24,
+            maxBlastForce: 26,
+            minBlastForce: 10,
+            gravity: 0.25,
+            shouldLoop: false,
+            colors: const [
+              Color(0xFF50C878),
+              Color(0xFF2EB872),
+              Color(0xFFB9F6CA),
+              Color(0xFFFFD449),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _AchievementsUnlockedDialog extends StatefulWidget {
   final List<Achievement> achievements;
   const _AchievementsUnlockedDialog({required this.achievements});
