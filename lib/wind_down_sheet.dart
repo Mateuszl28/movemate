@@ -256,7 +256,3 @@ bool shouldWindDown({
   if (category == 'cardio') return true;
   return seconds >= minSeconds;
 }
-
-// Avoid an unused-import warning in tests that import dart:math.
-// ignore: unused_element
-const _piRef = pi;
