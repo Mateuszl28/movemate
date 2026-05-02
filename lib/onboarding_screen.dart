@@ -51,7 +51,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: const Icon(Icons.bolt,
                         color: Colors.white, size: 22),
                   ),
-                  if (_page < 2)
+                  if (_page < _pageCount - 1)
                     TextButton(
                       onPressed: _finish,
                       child: const Text('Skip'),
@@ -73,6 +73,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     goal: _goal,
                     onProfile: (p) => setState(() => _profile = p),
                     onGoal: (g) => setState(() => _goal = g),
+                  ),
+                  _PainPrimerPage(
+                    selected: _initialPain,
+                    onToggle: (area, level) => setState(() {
+                      if (level == null) {
+                        _initialPain.remove(area);
+                      } else {
+                        _initialPain[area] = level;
+                      }
+                    }),
                   ),
                 ],
               ),
