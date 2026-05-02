@@ -39,6 +39,18 @@ class HistoryScreen extends StatelessWidget {
       mindfulWeek: storage.mindfulWeek,
       hasMindfulMoment: storage.hasAnyMindfulMoment,
     ).map((a) => a.id).toSet();
+    final progressMap = AchievementCatalog.progressOf(
+      sessions,
+      streak,
+      storage.dailyGoalMinutes,
+      eyeBreaksToday: storage.eyeBreaksToday,
+      eyeBreaksWeek: storage.eyeBreaksWeek,
+      bestPostureScore: storage.bestPostureScore,
+      ranPostureCheck: storage.hasRunPostureCheck,
+      sleepEntriesWeek: storage.sleepEntriesInLastDays(),
+      mindfulWeek: storage.mindfulWeek,
+      hasMindfulMoment: storage.hasAnyMindfulMoment,
+    );
     final insights = WeeklyInsights.from(sessions);
     final coverage = BodyCoverage.lastWeek(sessions, DateTime.now());
     final dna = MovementDna.compute(sessions);
