@@ -89,7 +89,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (i) {
+              children: List.generate(_pageCount, (i) {
                 final active = i == _page;
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 280),
@@ -116,7 +116,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   onPressed: () {
-                    if (_page < 2) {
+                    if (_page < _pageCount - 1) {
                       _pageController.nextPage(
                         duration: const Duration(milliseconds: 320),
                         curve: Curves.easeOut,
@@ -125,7 +125,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       _finish();
                     }
                   },
-                  child: Text(_page < 2 ? 'Next' : 'Get started',
+                  child: Text(
+                      _page < _pageCount - 1 ? 'Next' : 'Get started',
                       style: const TextStyle(
                           fontWeight: FontWeight.w800, fontSize: 16)),
                 ),
@@ -140,8 +141,176 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _finish() async {
     await widget.storage.setProfile(_profile);
     await widget.storage.setDailyGoalMinutes(_goal);
+    for (final entry in _initialPain.entries) {
+      await widget.storage.logPain(entry.key, entry.value);
+    }
     await widget.storage.setOnboarded(true);
     widget.onDone();
+  }
+}
+
+class _PainPrimerPage extends StatelessWidget {
+  final Map<BodyArea, int> selected;
+  final void Function(BodyArea area, int? level) onToggle;
+  const _PainPrimerPage({required this.selected, required this.onToggle});
+
+  // Subset of areas that desk-bound users typically hit first.
+  static const _options = <BodyArea>[
+    BodyArea.neck,
+    BodyArea.shoulders,
+    BodyArea.back,
+    BodyArea.hips,
+    BodyArea.wrists,
+    BodyArea.legs,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
+      child: ListView(
+        children: [
+          Text('Anything achy?',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w900, height: 1.1)),
+          const SizedBox(height: 8),
+          Text(
+            'Tap any area that bothers you today. The coach will pick gentler routines and watch the trend.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 22),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 2.6,
+            children: [
+              for (final a in _options)
+                _PainPrimerTile(
+                  area: a,
+                  level: selected[a],
+                  onTap: () {
+                    final cur = selected[a];
+                    if (cur == null) {
+                      onToggle(a, 4);
+                    } else if (cur < 7) {
+                      onToggle(a, cur + 3);
+                    } else {
+                      onToggle(a, null);
+                    }
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const Text('💡', style: TextStyle(fontSize: 22)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    selected.isEmpty
+                        ? 'Skip this if nothing hurts — you can log pain later from the journal.'
+                        : '${selected.length} area${selected.length == 1 ? "" : "s"} flagged. Tap again to dial up; once more clears it.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        height: 1.35,
+                        color: scheme.onPrimaryContainer),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PainPrimerTile extends StatelessWidget {
+  final BodyArea area;
+  final int? level;
+  final VoidCallback onTap;
+  const _PainPrimerTile({
+    required this.area,
+    required this.level,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final on = level != null;
+    final color = level == null
+        ? scheme.outline
+        : level! >= 7
+            ? const Color(0xFFE53935)
+            : level! >= 4
+                ? const Color(0xFFFF8A65)
+                : const Color(0xFFFFB74D);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: on
+                ? color.withValues(alpha: 0.18)
+                : scheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: on ? color : Colors.transparent,
+              width: 1.6,
+            ),
+          ),
+          child: Row(
+            children: [
+              Text(area.emoji, style: const TextStyle(fontSize: 24)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(area.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w800)),
+                    Text(
+                      level == null
+                          ? 'Tap if achy'
+                          : level! >= 7
+                              ? 'Sharp · ${level!}/10'
+                              : level! >= 4
+                                  ? 'Moderate · ${level!}/10'
+                                  : 'Mild · ${level!}/10',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: on ? color : scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
