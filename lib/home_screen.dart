@@ -60,7 +60,9 @@ class HomeScreen extends StatelessWidget {
           greeting: greeting,
           dateLabel: _dateLabel(now),
           streak: streak,
-          freezes: freezes),
+          freezes: freezes,
+          todayMinutes: todayMin,
+          goalMinutes: goal),
       _StreakRescueBanner(
         storage: storage,
         now: now,
@@ -203,26 +205,56 @@ class _Header extends StatelessWidget {
   final String dateLabel;
   final int streak;
   final int freezes;
+  final int todayMinutes;
+  final int goalMinutes;
   const _Header({
     required this.greeting,
     required this.dateLabel,
     required this.streak,
     required this.freezes,
+    required this.todayMinutes,
+    required this.goalMinutes,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final progress = goalMinutes <= 0
+        ? 0.0
+        : (todayMinutes / goalMinutes).clamp(0.0, 1.0);
+    final hitGoal = todayMinutes >= goalMinutes;
     return Row(
       children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: scheme.primary,
-            borderRadius: BorderRadius.circular(14),
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0, end: progress),
+          duration: const Duration(milliseconds: 700),
+          curve: Curves.easeOutCubic,
+          builder: (_, t, _) => SizedBox(
+            width: 52,
+            height: 52,
+            child: CustomPaint(
+              painter: _GoalRingPainter(
+                progress: t,
+                trackColor:
+                    scheme.outline.withValues(alpha: 0.18),
+                fillColor: hitGoal
+                    ? const Color(0xFF50C878)
+                    : scheme.primary,
+                glow: hitGoal,
+              ),
+              child: Center(
+                child: hitGoal
+                    ? const Icon(Icons.check_rounded,
+                        color: Color(0xFF2EB872), size: 26)
+                    : Text('${(t * 100).round()}%',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: scheme.primary,
+                        )),
+              ),
+            ),
           ),
-          child: const Icon(Icons.bolt, color: Colors.white, size: 26),
         ),
         const SizedBox(width: 12),
         Expanded(
