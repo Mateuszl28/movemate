@@ -187,7 +187,7 @@ class _PainPrimerPage extends StatelessWidget {
             crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 2.6,
+            childAspectRatio: 2.2,
             children: [
               for (final a in _options)
                 _PainPrimerTile(
