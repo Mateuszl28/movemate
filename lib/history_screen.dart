@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'achievements.dart';
 import 'body_coverage.dart';
+import 'body_coverage_radar.dart';
 import 'calendar_screen.dart';
 import 'consistency_heatmap.dart';
 import 'energy_hours.dart';
