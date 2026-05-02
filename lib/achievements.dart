@@ -115,6 +115,7 @@ class AchievementCatalog {
       description: 'Complete your first session.',
       emoji: '🌱',
       check: (s) => s.sessionCount >= 1,
+      progress: (s) => (s.sessionCount.clamp(0, 1), 1),
     ),
     Achievement(
       id: 'on_a_roll',
@@ -122,6 +123,7 @@ class AchievementCatalog {
       description: 'Move 3 days in a row.',
       emoji: '🔥',
       check: (s) => s.currentStreak >= 3,
+      progress: (s) => (s.currentStreak.clamp(0, 3), 3),
     ),
     Achievement(
       id: 'week_warrior',
@@ -129,6 +131,7 @@ class AchievementCatalog {
       description: 'Reach a 7-day streak.',
       emoji: '⚔️',
       check: (s) => s.currentStreak >= 7,
+      progress: (s) => (s.currentStreak.clamp(0, 7), 7),
     ),
     Achievement(
       id: 'ten_sessions',
@@ -136,6 +139,7 @@ class AchievementCatalog {
       description: 'Complete 10 sessions.',
       emoji: '🔁',
       check: (s) => s.sessionCount >= 10,
+      progress: (s) => (s.sessionCount.clamp(0, 10), 10),
     ),
     Achievement(
       id: 'hour_of_power',
@@ -143,6 +147,7 @@ class AchievementCatalog {
       description: 'Accumulate 60 minutes of movement.',
       emoji: '⏱️',
       check: (s) => s.totalMinutes >= 60,
+      progress: (s) => (s.totalMinutes.clamp(0, 60), 60),
     ),
     Achievement(
       id: 'marathon_mind',
@@ -150,6 +155,7 @@ class AchievementCatalog {
       description: 'Reach 200 total minutes.',
       emoji: '🏃',
       check: (s) => s.totalMinutes >= 200,
+      progress: (s) => (s.totalMinutes.clamp(0, 200), 200),
     ),
     Achievement(
       id: 'all_rounder',
@@ -158,6 +164,10 @@ class AchievementCatalog {
       emoji: '🎯',
       check: (s) =>
           s.categoriesTried.length == ExerciseCategory.values.length,
+      progress: (s) => (
+        s.categoriesTried.length,
+        ExerciseCategory.values.length,
+      ),
     ),
     Achievement(
       id: 'early_bird',
