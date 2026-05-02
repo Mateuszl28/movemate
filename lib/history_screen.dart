@@ -946,7 +946,10 @@ class _AchievementsSection extends StatelessWidget {
             children: [
               for (final a in items)
                 _BadgeTile(
-                    achievement: a, earned: earnedIds.contains(a.id)),
+                  achievement: a,
+                  earned: earnedIds.contains(a.id),
+                  progress: progressMap[a.id],
+                ),
             ],
           ),
         ),
