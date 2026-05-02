@@ -279,4 +279,41 @@ class AchievementCatalog {
     );
     return all.where((a) => a.check(stats)).toList();
   }
+
+  /// Returns a map keyed by achievement id of (current, target) for
+  /// achievements that expose progress data. Useful for showing how close the
+  /// user is to a locked badge.
+  static Map<String, AchievementProgress> progressOf(
+    List<SessionRecord> sessions,
+    int streak,
+    int dailyGoalMinutes, {
+    int eyeBreaksToday = 0,
+    int eyeBreaksWeek = 0,
+    int? bestPostureScore,
+    bool ranPostureCheck = false,
+    int sleepEntriesWeek = 0,
+    int mindfulWeek = 0,
+    bool hasMindfulMoment = false,
+  }) {
+    final stats = _AchievementStats.from(
+      sessions,
+      streak,
+      dailyGoalMinutes,
+      eyeBreaksToday: eyeBreaksToday,
+      eyeBreaksWeek: eyeBreaksWeek,
+      bestPostureScore: bestPostureScore,
+      ranPostureCheck: ranPostureCheck,
+      sleepEntriesWeek: sleepEntriesWeek,
+      mindfulWeek: mindfulWeek,
+      hasMindfulMoment: hasMindfulMoment,
+    );
+    final out = <String, AchievementProgress>{};
+    for (final a in all) {
+      final p = a.progress;
+      if (p == null) continue;
+      final result = p(stats);
+      out[a.id] = AchievementProgress(result.$1, result.$2);
+    }
+    return out;
+  }
 }
