@@ -43,6 +43,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _quietEnd = widget.storage.quietHoursEnd;
   }
 
+  Future<void> _previewVoice(CoachPersonality p) async {
+    final tts = TtsService();
+    await tts.init(personality: p);
+    await tts.speak(p.sampleLine);
+    // Let the line finish before disposing — keep the service alive briefly.
+    Future.delayed(const Duration(seconds: 5), tts.dispose);
+  }
+
   Future<void> _persistQuietHours() async {
     await widget.storage.setQuietHours(_quietStart, _quietEnd);
     await NotificationService.instance.scheduleReminders(
