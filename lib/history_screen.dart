@@ -177,7 +177,8 @@ class HistoryScreen extends StatelessWidget {
             _PersonalRecordsSection(
                 records: PersonalRecords.from(sessions)),
             const SizedBox(height: 24),
-            _AchievementsSection(earnedIds: earned),
+            _AchievementsSection(
+                earnedIds: earned, progressMap: progressMap),
             const SizedBox(height: 24),
             Text('Recent sessions',
                 style: Theme.of(context)
