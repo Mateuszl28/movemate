@@ -12,6 +12,7 @@ import 'share_card.dart';
 import 'storage.dart';
 import 'tts_service.dart';
 import 'wellness_score.dart';
+import 'wind_down_sheet.dart';
 
 class SessionScreen extends StatefulWidget {
   final WorkoutPlan plan;
