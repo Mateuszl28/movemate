@@ -552,6 +552,47 @@ class Storage {
     await _prefs.setString(_kEnergyLog, jsonEncode(log));
   }
 
+  /// Standalone mood check-ins (1..5) tied to the moment the user tapped, not
+  /// to a session. Stored as a flat list of [timestampMs, level] pairs (capped
+  /// at 200 entries) so the Home check-in card can know how stale the last
+  /// reading is.
+  List<MoodCheckIn> get moodCheckIns {
+    final raw = _prefs.getString(_kMoodCheckLog);
+    if (raw == null || raw.isEmpty) return const [];
+    final decoded = jsonDecode(raw) as List<dynamic>;
+    return decoded
+        .map((e) {
+          final pair = e as List<dynamic>;
+          return MoodCheckIn(
+            at: DateTime.fromMillisecondsSinceEpoch(
+                (pair[0] as num).toInt()),
+            level: (pair[1] as num).toInt(),
+          );
+        })
+        .toList();
+  }
+
+  MoodCheckIn? get latestMoodCheckIn {
+    final list = moodCheckIns;
+    if (list.isEmpty) return null;
+    return list.last;
+  }
+
+  Future<void> logMoodCheckIn(int level) async {
+    final list = moodCheckIns;
+    list.add(MoodCheckIn(
+      at: DateTime.now(),
+      level: level.clamp(1, 5),
+    ));
+    // Keep newest 200 entries to avoid unbounded growth.
+    final trimmed =
+        list.length > 200 ? list.sublist(list.length - 200) : list;
+    final encoded = trimmed
+        .map((e) => [e.at.millisecondsSinceEpoch, e.level])
+        .toList();
+    await _prefs.setString(_kMoodCheckLog, jsonEncode(encoded));
+  }
+
   /// Average posture score over the last [days] days (0..100), or null if no data.
   int? postureAverage({int days = 7}) {
     final log = postureLog;
