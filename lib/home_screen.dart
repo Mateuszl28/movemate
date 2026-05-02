@@ -10,6 +10,7 @@ import 'eye_break_screen.dart';
 import 'focus_screen.dart';
 import 'models.dart';
 import 'posture_check_screen.dart';
+import 'tension_screen.dart';
 import 'walk_break_screen.dart';
 import 'recommendations.dart';
 import 'session_screen.dart';
@@ -205,6 +206,14 @@ class HomeScreen extends StatelessWidget {
                 );
                 if (ok == true) onSessionComplete();
                 onSessionComplete();
+              },
+              onTensionMap: () async {
+                final ok = await Navigator.of(context).push<bool>(
+                  FadeThroughRoute(
+                    builder: (_) => TensionScreen(storage: storage),
+                  ),
+                );
+                if (ok == true) onSessionComplete();
               },
             ),
             const SizedBox(height: 24),
@@ -1875,51 +1884,73 @@ class _WellnessToolsRow extends StatelessWidget {
   final VoidCallback onEyeBreak;
   final VoidCallback onWalkBreak;
   final VoidCallback onPostureCheck;
+  final VoidCallback onTensionMap;
   const _WellnessToolsRow({
     required this.eyeBreaksToday,
     required this.postureScore,
     required this.onEyeBreak,
     required this.onWalkBreak,
     required this.onPostureCheck,
+    required this.onTensionMap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _ToolCard(
-            onTap: onEyeBreak,
-            emoji: '👀',
-            title: 'Eye',
-            subtitle: '20-20-20',
-            badge: eyeBreaksToday > 0 ? '$eyeBreaksToday today' : '30s',
-            gradient: const [Color(0xFF3D5A80), Color(0xFF293E66)],
+    return SizedBox(
+      height: 132,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.zero,
+        children: [
+          SizedBox(
+            width: 132,
+            child: _ToolCard(
+              onTap: onEyeBreak,
+              emoji: '👀',
+              title: 'Eye',
+              subtitle: '20-20-20',
+              badge: eyeBreaksToday > 0 ? '$eyeBreaksToday today' : '30s',
+              gradient: const [Color(0xFF3D5A80), Color(0xFF293E66)],
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _ToolCard(
-            onTap: onWalkBreak,
-            emoji: '🚶',
-            title: 'Walk',
-            subtitle: '1 / 2 / 5 min',
-            badge: 'Cardio',
-            gradient: const [Color(0xFFE57373), Color(0xFFD84315)],
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 132,
+            child: _ToolCard(
+              onTap: onWalkBreak,
+              emoji: '🚶',
+              title: 'Walk',
+              subtitle: '1 / 2 / 5 min',
+              badge: 'Cardio',
+              gradient: const [Color(0xFFE57373), Color(0xFFD84315)],
+            ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _ToolCard(
-            onTap: onPostureCheck,
-            emoji: '🧍',
-            title: 'Posture',
-            subtitle: '5-step check',
-            badge: postureScore != null ? '$postureScore / 100' : 'Run',
-            gradient: const [Color(0xFF7B5CFF), Color(0xFF4A6CFF)],
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 132,
+            child: _ToolCard(
+              onTap: onPostureCheck,
+              emoji: '🧍',
+              title: 'Posture',
+              subtitle: '5-step check',
+              badge: postureScore != null ? '$postureScore / 100' : 'Run',
+              gradient: const [Color(0xFF7B5CFF), Color(0xFF4A6CFF)],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 132,
+            child: _ToolCard(
+              onTap: onTensionMap,
+              emoji: '🎯',
+              title: 'Tension',
+              subtitle: 'Pick sore spots',
+              badge: 'Custom',
+              gradient: const [Color(0xFF26A69A), Color(0xFF00796B)],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

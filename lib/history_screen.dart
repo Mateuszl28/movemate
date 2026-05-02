@@ -8,6 +8,7 @@ import 'energy_hours.dart';
 import 'insights.dart';
 import 'models.dart';
 import 'movement_dna.dart';
+import 'records.dart';
 import 'storage.dart';
 import 'transitions.dart';
 
@@ -123,6 +124,9 @@ class HistoryScreen extends StatelessWidget {
             _BodyCoverageSection(coverage: coverage),
             const SizedBox(height: 24),
             _HydrationSection(byDay: hydrationByDay, goal: hydrationGoal),
+            const SizedBox(height: 24),
+            _PersonalRecordsSection(
+                records: PersonalRecords.from(sessions)),
             const SizedBox(height: 24),
             _AchievementsSection(earnedIds: earned),
             const SizedBox(height: 24),
