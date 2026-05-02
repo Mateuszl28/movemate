@@ -7,7 +7,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.11%2B-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.11%2B-0175C2?logo=dart)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/tests-25%20passing-2EB872)](#testing)
+[![Tests](https://img.shields.io/badge/tests-29%20passing-2EB872)](#testing)
 [![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android)](https://android.com)
 
 ---
@@ -44,6 +44,9 @@ account.
   history, daily-goal status, energy, and skipped categories
 - **Smart Coach** — surfaces 4 contextual lines per day, prioritised by
   signal strength
+- **Moment of Pride** — ranked picker that surfaces the user's best recent
+  signal (pain drop > streak > week growth > milestone > mood lift > variety
+  > comeback) as a celebration hero on Home
 - **Wellness Score** — composite index (Streak / Variety / Volume / Today)
   with a week-over-week delta
 - **Movement DNA + Energy Hours + Body Coverage** — analytics derived from
@@ -56,6 +59,8 @@ account.
   mid-session mood capture
 - **Breathing room** — Box · 4-7-8 · Triangle · Coherent breath patterns
   with a pulsing focal circle
+- **Breathing wind-down** — automatic 4-cycle box-breathing modal after
+  cardio or any session ≥ 5 min, with travelling-dot box visualization
 - **Focus mode** — Pomodoro block with built-in mid-block movement nudge
 - **Eye Break (20-20-20)** — 30-second three-phase eye-rest
 - **Walk Break** — 1 / 2 / 5-min standing walk with TTS cues
@@ -69,31 +74,64 @@ account.
 - **Pain Journal** — per-body-area pain (0–10) with an **interactive body
   heatmap** (front-view silhouette that tints by pain level) plus 14-day
   sparkline charts; drives the adaptive plan + coach
+- **Pain report share image** — one-tap render of a 1080×1920 PNG card
+  summarising 30-day per-area trends, biggest improvement, hottest area,
+  and days logged — shareable straight to a physiotherapist
 - **Sleep journal** — last night's hours and 1–5 quality, surfaces 7-day avg
 - **Energy check-in** — quick 1–5 emoji tap that influences recommendations
 - **Mood + notes** — captured per session
+- **Mood line chart** — smooth 14-session area chart on Progress with green
+  fill above the zero baseline and red fill below
 - **Hydration** — daily glass goal with a single-tap pill
 - **Daily challenge + daily mantra** — generated from the date
 
 ### 🏆 Engagement
 - **Streak with freezes** — protection days earned every 7-day milestone;
   evening rescue banner if today is empty
-- **18 achievements** across sessions, streaks, eye breaks, posture, sleep,
-  mindfulness
+- **18 achievements** with a confetti-firing celebration dialog (pulsing
+  trophy, gradient backdrop, per-badge bounce-in animation)
+- **Daily goal celebration** — when a session crosses your daily-minutes
+  goal, a green confetti dialog fires once per day
+- **Streak milestone celebrations** — dedicated dialog at 7 / 14 / 30 / 60 /
+  100 / 200 / 365 day milestones
 - **Weekly review** — Monday auto-popup summarising the prior week
+- **Weekly recap share image** — 1080×1920 portrait recap card (totals,
+  day-by-day bar chart, streak, top focus, mood) shareable from Progress
+
+### 📊 Progress visualisations
+- **30-day daily-minutes heatmap** — classic month grid
+- **90-day consistency heatmap** — GitHub-style 13-week × 7-day grid with
+  active-day count, total minutes, and longest streak callout
+- **Body coverage radar** — hexagonal CustomPainter visualising minutes per
+  body area (neck/shoulders/back/core/hips/legs)
 
 ### 🧰 Wellness tooling and quality of life
 - **6-tile wellness strip** — Eye, Walk, Posture, Tension, Mindful, Sleep,
   Pain — horizontally scrollable
 - **Quiet hours** — silence reminders during a window that wraps past
   midnight
+- **Test notification button** — preview what a real reminder looks like
+  before relying on the schedule
 - **Backup / export** — share a JSON dump of all settings, sessions, and
   logs via the system share sheet
 - **Demo seeder** — Settings tile that loads a 30-day realistic snapshot
   (sessions, healing back-pain trend, sleep, energy, hydration, posture)
   for instant demos and screenshots
+- **Onboarding pain pre-tag** — fourth onboarding page lets users tap any
+  achy areas (cycles mild → moderate → sharp → cleared) so the adaptive
+  plan personalizes from session zero
+- **Branded splash** — gradient background + vector M monogram, with light
+  and dark variants
 - **Light / dark / auto theme**, configurable coach voice personality,
   hydration & daily-minutes goals
+
+### 📱 Native Android integration
+- **App shortcuts** — long-press the launcher icon for instant access to
+  Pain · Stretch · Breathe (intent-filters in `AndroidManifest.xml`,
+  `MethodChannel` plumbing in `MainActivity.kt`, Dart-side routing via
+  `FadeThroughRoute` in `main.dart`)
+- **System notifications** — TZ-aware scheduling, channel + boot receiver
+  registration, quiet-hours filter
 
 ---
 
@@ -106,7 +144,8 @@ account.
 | Voice | `flutter_tts` with a per-personality rate / pitch profile |
 | Notifications | `flutter_local_notifications` + `timezone` + `flutter_timezone`, with quiet-hours filtering |
 | Sharing | `share_plus` + `path_provider` for share-card PNGs and JSON backups |
-| Effects | `confetti` for streak celebrations |
+| Effects | `confetti` for streak / goal / achievement celebrations |
+| Native | Kotlin `MethodChannel` for app shortcuts |
 | i18n | `intl` for date formatting |
 
 No backend, no auth, no analytics SDK. Single-binary APK.
@@ -130,7 +169,9 @@ No backend, no auth, no analytics SDK. Single-binary APK.
    │ session    │ │ records    │ │              │
    │ pain_log   │ │ wellness_  │ │              │
    │ sleep      │ │   score    │ │              │
-   │ ...12 more │ │ insights   │ │              │
+   │ ...12 more │ │ moment_of_ │ │              │
+   │            │ │   pride    │ │              │
+   │            │ │ insights   │ │              │
    └─────┬──────┘ └──────┬─────┘ └──────┬───────┘
          │                │              │
          └────────────────┴──────────────┘
@@ -143,8 +184,10 @@ No backend, no auth, no analytics SDK. Single-binary APK.
                 └────────────────────┘
 
 Services:
-  · NotificationService  — TZ-aware reminder scheduling, quiet-hours filter
+  · NotificationService  — TZ-aware reminder scheduling, quiet-hours filter,
+                           test-now + showTestNow API
   · TtsService           — voice prompts, personality-driven rate/pitch
+  · MainActivity.kt      — Android app shortcuts plumbed via MethodChannel
 ```
 
 The **Storage facade** (`lib/storage.dart`) is the single source of truth.
@@ -164,19 +207,21 @@ any framework setup — see `test/`.
 
 ```
 lib/
-  main.dart                  Entry, theme, 4-tab AppShell
+  main.dart                  Entry, theme, 4-tab AppShell, shortcut routing
   storage.dart               Single SharedPreferences facade — every key + helper
   models.dart                Exercise, WorkoutPlan, SessionRecord, BodyArea, ...
 
   # Dashboard + tools
-  home_screen.dart           Daily dashboard (TodayCard, score, coach, recommended)
+  home_screen.dart           Dashboard (TodayCard, score, pride, coach, plan, recommended)
   tools_screen.dart          Adaptive plan + wellness strip + categories + plans
-  history_screen.dart        Stats, calendar, body coverage, records, achievements
-  settings_screen.dart       Profile, goals, reminders, quiet hours, voice, backup
+  history_screen.dart        Stats, calendar, heatmaps, body coverage radar, mood line, records
+  settings_screen.dart       Profile, goals, reminders (with test-fire), quiet hours, voice, backup
 
   # Active sessions
-  session_screen.dart        Plan-driven workout runner with TTS + mood capture
+  session_screen.dart        Plan-driven workout runner with TTS, mood capture,
+                             goal celebration, achievement + streak dialogs
   breathing_screen.dart      Box / 4-7-8 / Triangle / Coherent breath patterns
+  wind_down_sheet.dart       4-cycle box-breathing modal after high-effort sessions
   focus_screen.dart          Pomodoro focus + movement nudge
   eye_break_screen.dart      20-20-20 eye-rest
   walk_break_screen.dart     1 / 2 / 5-min standing walk timer
@@ -184,16 +229,19 @@ lib/
   posture_check_screen.dart  5-question self-check + tailored follow-up
   tension_screen.dart        Body-area picker → custom session builder
   sleep_screen.dart          Hours + quality entry
-  pain_journal_screen.dart   Per-area pain log with body heatmap + 14-day sparkline
+  pain_journal_screen.dart   Per-area pain log with body heatmap + 14-day sparkline + share
   body_heatmap.dart          Stack-based front-view body silhouette, tints by pain
+  body_coverage_radar.dart   Hexagonal radar of per-area minutes (last 7 days)
+  consistency_heatmap.dart   GitHub-style 13-week × 7-day grid
   weekly_plan_screen.dart    Adaptive 7-day plan view
   custom_builder.dart        Pick exercises, set durations
-  onboarding_screen.dart     First-run flow
+  onboarding_screen.dart     First-run flow (4 pages incl. pain pre-tag)
 
   # Algorithms (pure, testable)
   recommendations.dart       Recommender — picks the next session
   smart_coach.dart           Coach lines for the dashboard
   adaptive_plan.dart         7-day plan generator
+  moment_of_pride.dart       Ranked picker for the celebration hero
   records.dart               Lifetime PersonalRecords
   wellness_score.dart        Composite Streak/Variety/Volume/Today score
   movement_dna.dart          Activity-mix profiling
@@ -205,19 +253,27 @@ lib/
   achievements.dart          18 achievement definitions + check engine
 
   # Services
-  notification_service.dart  TZ-aware reminders + quiet-hours filter
+  notification_service.dart  TZ-aware reminders, quiet-hours filter, showTestNow
   tts_service.dart           flutter_tts wrapper with 3 personalities
 
-  # UI helpers
+  # UI helpers + share renderers
   animated_widgets.dart      StaggeredFadeIn cascade
   transitions.dart           FadeThroughRoute
   exercise_library.dart      30+ exercises across 4 categories + featured plans
   share_card.dart            Render shareable PNG of a session
+  pain_report_card.dart      30-day pain report PNG (1080×1920) for physiotherapist
+  weekly_recap_card.dart     Weekly recap PNG (1080×1920) for social share
   demo_seeder.dart           Generate a 30-day realistic snapshot for demos
   wellness_detail_screen.dart  Score breakdown drill-down
   weekly_review.dart         Monday-morning weekly summary popup
   calendar_screen.dart       Month grid of activity
   mood_picker.dart, note_picker.dart  Reusable session widgets
+
+android/app/src/main/
+  AndroidManifest.xml        App shortcuts intent-filters + meta-data
+  kotlin/.../MainActivity.kt MethodChannel for shortcut routing
+  res/xml/shortcuts.xml      Pain · Stretch · Breathe long-press shortcuts
+  res/drawable/              Branded splash gradient + M-monogram vector
 
 test/
   widget_test.dart           Exercise library invariants
@@ -225,6 +281,7 @@ test/
   adaptive_plan_test.dart    Adaptive 7-day plan generator
   storage_test.dart          Pain / sleep / quiet-hours storage round-trips
   demo_seeder_test.dart      Demo snapshot shape + downstream effects
+  moment_of_pride_test.dart  Pride algorithm priority + selection rules
 
 .github/workflows/
   ci.yml                     Flutter analyze + test on push / PR
@@ -263,11 +320,12 @@ flutter test
 ```
 
 Coverage focuses on the algorithmic core (records, adaptive plan, storage,
-demo seeder). The 25 tests in `test/` are framework-light
+demo seeder, moment of pride). The 29 tests in `test/` are framework-light
 (`shared_preferences` is mocked via `setMockInitialValues`), run in under
 6 seconds, and exercise the interesting branches: streak gaps, day-sums,
 plan variation under sleep deficit and pain flags, quiet-hours wrap-around
-past midnight, demo seeder produces a healing trend, etc.
+past midnight, demo seeder produces a healing trend, pride algorithm picks
+pain-drop over streak when both qualify, etc.
 
 The included **GitHub Actions workflow** (`.github/workflows/ci.yml`) runs
 `flutter analyze --no-fatal-infos` + `flutter test --reporter expanded` on
@@ -279,8 +337,12 @@ every push and pull request to `main`.
 
 - **No "log your steps" guilt.** The sit-timer pill warns gently after a
   custom interval (default 2 h) but never shouts.
-- **Pain comes first in the coach.** When the user has flagged real pain,
-  the coach surfaces it above streaks and goals — physiotherapy first.
+- **Pain comes first.** When the user has flagged real pain, the coach
+  surfaces it above streaks and goals — physiotherapy first. The Moment of
+  Pride algorithm ranks pain drops above streaks too.
+- **Wins, not just nags.** Three celebration moments (achievement, daily
+  goal, streak milestone) each have their own dedicated confetti dialog,
+  picked to fire independently in the post-session flow.
 - **Streak freezes prevent shame spirals.** A 7-day streak earns a freeze.
   Miss a day, and a freeze is consumed silently. The streak survives. The
   rescue banner only appears when freezes are already gone and the day still
@@ -288,6 +350,9 @@ every push and pull request to `main`.
 - **Adaptive plan is transparent.** Every day card shows *why* it's there
   ("Targets back + neck", "You haven't worked shoulders recently"). No
   black-box recommendations.
+- **Wind-down after intensity.** Cardio sessions and any session ≥ 5 min
+  trigger a 4-cycle box-breathing modal before the mood prompt — closing the
+  loop on intensity with a calm reset rather than a hard stop.
 
 ---
 
@@ -298,7 +363,7 @@ every push and pull request to `main`.
 - [ ] Health Connect integration — pull step count + heart rate
 - [ ] Localization — Polish + English language packs
 - [ ] Adaptive plan editing — drag-to-rearrange days
-- [ ] Pain trend report PDF export
+- [ ] Multi-page physiotherapist PDF export
 - [ ] Apple Health + iOS support
 
 ---
