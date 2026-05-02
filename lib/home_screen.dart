@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'adaptive_plan.dart';
+import 'moment_of_pride.dart';
 import 'animated_widgets.dart';
 import 'daily_challenge.dart';
 import 'daily_mantra.dart';
