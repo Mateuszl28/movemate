@@ -117,6 +117,9 @@ class WeeklyReviewSummary {
       eyeBreaksWeek: storage.eyeBreaksWeek,
       bestPostureScore: storage.bestPostureScore,
       ranPostureCheck: storage.hasRunPostureCheck,
+      sleepEntriesWeek: storage.sleepEntriesInLastDays(),
+      mindfulWeek: storage.mindfulWeek,
+      hasMindfulMoment: storage.hasAnyMindfulMoment,
     ).toSet();
     final earnedBefore = AchievementCatalog.earned(
       priorWeekSessions +

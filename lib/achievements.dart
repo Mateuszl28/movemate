@@ -28,6 +28,9 @@ class _AchievementStats {
   final int eyeBreaksWeek;
   final int? bestPostureScore;
   final bool ranPostureCheck;
+  final int sleepEntriesWeek;
+  final int mindfulWeek;
+  final bool hasMindfulMoment;
 
   _AchievementStats({
     required this.sessionCount,
@@ -41,6 +44,9 @@ class _AchievementStats {
     this.eyeBreaksWeek = 0,
     this.bestPostureScore,
     this.ranPostureCheck = false,
+    this.sleepEntriesWeek = 0,
+    this.mindfulWeek = 0,
+    this.hasMindfulMoment = false,
   });
 
   factory _AchievementStats.from(
@@ -51,6 +57,9 @@ class _AchievementStats {
     int eyeBreaksWeek = 0,
     int? bestPostureScore,
     bool ranPostureCheck = false,
+    int sleepEntriesWeek = 0,
+    int mindfulWeek = 0,
+    bool hasMindfulMoment = false,
   }) {
     final today = DateTime.now();
     final todayKey =
@@ -81,6 +90,9 @@ class _AchievementStats {
       eyeBreaksWeek: eyeBreaksWeek,
       bestPostureScore: bestPostureScore,
       ranPostureCheck: ranPostureCheck,
+      sleepEntriesWeek: sleepEntriesWeek,
+      mindfulWeek: mindfulWeek,
+      hasMindfulMoment: hasMindfulMoment,
     );
   }
 }
@@ -186,6 +198,34 @@ class AchievementCatalog {
       emoji: '🪞',
       check: (s) => s.ranPostureCheck,
     ),
+    Achievement(
+      id: 'sleep_logger',
+      name: 'Sleep logger',
+      description: 'Log your first night of sleep.',
+      emoji: '🛌',
+      check: (s) => s.sleepEntriesWeek >= 1,
+    ),
+    Achievement(
+      id: 'rested_week',
+      name: 'Rested week',
+      description: 'Log sleep at least 5 nights in a week.',
+      emoji: '🌙',
+      check: (s) => s.sleepEntriesWeek >= 5,
+    ),
+    Achievement(
+      id: 'grounded',
+      name: 'Grounded',
+      description: 'Complete your first 5-4-3-2-1 grounding.',
+      emoji: '🧘',
+      check: (s) => s.hasMindfulMoment,
+    ),
+    Achievement(
+      id: 'present_mind',
+      name: 'Present mind',
+      description: 'Five grounding moments in a week.',
+      emoji: '✨',
+      check: (s) => s.mindfulWeek >= 5,
+    ),
   ];
 
   static List<Achievement> earned(
@@ -196,6 +236,9 @@ class AchievementCatalog {
     int eyeBreaksWeek = 0,
     int? bestPostureScore,
     bool ranPostureCheck = false,
+    int sleepEntriesWeek = 0,
+    int mindfulWeek = 0,
+    bool hasMindfulMoment = false,
   }) {
     final stats = _AchievementStats.from(
       sessions,
@@ -205,6 +248,9 @@ class AchievementCatalog {
       eyeBreaksWeek: eyeBreaksWeek,
       bestPostureScore: bestPostureScore,
       ranPostureCheck: ranPostureCheck,
+      sleepEntriesWeek: sleepEntriesWeek,
+      mindfulWeek: mindfulWeek,
+      hasMindfulMoment: hasMindfulMoment,
     );
     return all.where((a) => a.check(stats)).toList();
   }

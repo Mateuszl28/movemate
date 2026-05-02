@@ -25,6 +25,8 @@ class Storage {
   static const _kQuietStart = 'quietHoursStart'; // 0..23
   static const _kQuietEnd = 'quietHoursEnd';     // 0..23
   static const _kEnergyLog = 'energyLog';        // JSON map: YYYY-MM-DD -> List<int>
+  static const _kSleepLog = 'sleepLog';          // JSON map: YYYY-MM-DD -> {h, q}
+  static const _kMindfulLog = 'mindfulLog';      // JSON map: YYYY-MM-DD -> int
 
   static const int maxFreezes = 3;
 
@@ -85,6 +87,8 @@ class Storage {
     await _prefs.remove(_kEyeBreaksLog);
     await _prefs.remove(_kPostureLog);
     await _prefs.remove(_kEnergyLog);
+    await _prefs.remove(_kSleepLog);
+    await _prefs.remove(_kMindfulLog);
   }
 
   int get freezesAvailable => _prefs.getInt(_kFreezesAvailable) ?? 0;
@@ -238,6 +242,101 @@ class Storage {
   }
 
   bool get hasRunPostureCheck => postureLog.isNotEmpty;
+
+  /// Daily sleep log — hours slept (double) plus subjective quality (1..5).
+  /// One entry per day; logging again replaces the prior entry.
+  Map<String, SleepEntry> get sleepLog {
+    final raw = _prefs.getString(_kSleepLog);
+    if (raw == null || raw.isEmpty) return const {};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map((k, v) {
+      final m = v as Map<String, dynamic>;
+      return MapEntry(
+        k,
+        SleepEntry(
+          hours: (m['h'] as num).toDouble(),
+          quality: (m['q'] as num).toInt(),
+        ),
+      );
+    });
+  }
+
+  SleepEntry? get latestSleep {
+    final log = sleepLog;
+    if (log.isEmpty) return null;
+    final keys = log.keys.toList()..sort();
+    return log[keys.last];
+  }
+
+  Future<void> logSleep(double hours, int quality) async {
+    final log = Map<String, SleepEntry>.from(sleepLog);
+    final key = _dayKey(DateTime.now());
+    log[key] = SleepEntry(hours: hours, quality: quality);
+    final encoded = log.map(
+        (k, v) => MapEntry(k, {'h': v.hours, 'q': v.quality}));
+    await _prefs.setString(_kSleepLog, jsonEncode(encoded));
+  }
+
+  /// Number of sleep entries logged in the last [days] days.
+  int sleepEntriesInLastDays({int days = 7}) {
+    final log = sleepLog;
+    final now = DateTime.now();
+    int count = 0;
+    for (int i = 0; i < days; i++) {
+      final key = _dayKey(now.subtract(Duration(days: i)));
+      if (log.containsKey(key)) count += 1;
+    }
+    return count;
+  }
+
+  bool get hasAnyMindfulMoment => mindfulLog.isNotEmpty;
+
+  /// Average hours slept across the last [days] days that have an entry.
+  /// Returns null if no entries fall in the window.
+  double? sleepAverageHours({int days = 7}) {
+    final log = sleepLog;
+    if (log.isEmpty) return null;
+    final now = DateTime.now();
+    double sum = 0;
+    int count = 0;
+    for (int i = 0; i < days; i++) {
+      final key = _dayKey(now.subtract(Duration(days: i)));
+      final entry = log[key];
+      if (entry == null) continue;
+      sum += entry.hours;
+      count += 1;
+    }
+    if (count == 0) return null;
+    return sum / count;
+  }
+
+  /// Mindfulness moments completed per day.
+  Map<String, int> get mindfulLog {
+    final raw = _prefs.getString(_kMindfulLog);
+    if (raw == null || raw.isEmpty) return const {};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map((k, v) => MapEntry(k, (v as num).toInt()));
+  }
+
+  int get mindfulToday => mindfulLog[_dayKey(DateTime.now())] ?? 0;
+
+  int get mindfulWeek {
+    final log = mindfulLog;
+    final now = DateTime.now();
+    int total = 0;
+    for (int i = 0; i < 7; i++) {
+      final key = _dayKey(now.subtract(Duration(days: i)));
+      total += log[key] ?? 0;
+    }
+    return total;
+  }
+
+  Future<void> logMindfulMoment() async {
+    final log = Map<String, int>.from(mindfulLog);
+    final key = _dayKey(DateTime.now());
+    log[key] = (log[key] ?? 0) + 1;
+    await _prefs.setString(_kMindfulLog, jsonEncode(log));
+  }
 
   /// Returns a JSON-encoded snapshot of every key currently stored. Includes a
   /// version + timestamp so future imports can validate the payload. Lists are
@@ -445,4 +544,10 @@ class Storage {
 
   static String _dayKey(DateTime d) =>
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+}
+
+class SleepEntry {
+  final double hours;
+  final int quality; // 1..5
+  const SleepEntry({required this.hours, required this.quality});
 }

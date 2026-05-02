@@ -8,8 +8,10 @@ import 'daily_mantra.dart';
 import 'exercise_library.dart';
 import 'eye_break_screen.dart';
 import 'focus_screen.dart';
+import 'mindful_screen.dart';
 import 'models.dart';
 import 'posture_check_screen.dart';
+import 'sleep_screen.dart';
 import 'tension_screen.dart';
 import 'walk_break_screen.dart';
 import 'recommendations.dart';
@@ -182,6 +184,8 @@ class HomeScreen extends StatelessWidget {
             _WellnessToolsRow(
               eyeBreaksToday: storage.eyeBreaksToday,
               postureScore: storage.latestPostureScore,
+              mindfulToday: storage.mindfulToday,
+              latestSleepHours: storage.latestSleep?.hours,
               onEyeBreak: () async {
                 final ok = await Navigator.of(context).push<bool>(
                   FadeThroughRoute(
@@ -211,6 +215,22 @@ class HomeScreen extends StatelessWidget {
                 final ok = await Navigator.of(context).push<bool>(
                   FadeThroughRoute(
                     builder: (_) => TensionScreen(storage: storage),
+                  ),
+                );
+                if (ok == true) onSessionComplete();
+              },
+              onMindful: () async {
+                final ok = await Navigator.of(context).push<bool>(
+                  FadeThroughRoute(
+                    builder: (_) => MindfulScreen(storage: storage),
+                  ),
+                );
+                if (ok == true) onSessionComplete();
+              },
+              onSleep: () async {
+                final ok = await Navigator.of(context).push<bool>(
+                  FadeThroughRoute(
+                    builder: (_) => SleepScreen(storage: storage),
                   ),
                 );
                 if (ok == true) onSessionComplete();
@@ -1881,17 +1901,25 @@ class _EnergyDot extends StatelessWidget {
 class _WellnessToolsRow extends StatelessWidget {
   final int eyeBreaksToday;
   final int? postureScore;
+  final int mindfulToday;
+  final double? latestSleepHours;
   final VoidCallback onEyeBreak;
   final VoidCallback onWalkBreak;
   final VoidCallback onPostureCheck;
   final VoidCallback onTensionMap;
+  final VoidCallback onMindful;
+  final VoidCallback onSleep;
   const _WellnessToolsRow({
     required this.eyeBreaksToday,
     required this.postureScore,
+    required this.mindfulToday,
+    required this.latestSleepHours,
     required this.onEyeBreak,
     required this.onWalkBreak,
     required this.onPostureCheck,
     required this.onTensionMap,
+    required this.onMindful,
+    required this.onSleep,
   });
 
   @override
@@ -1947,6 +1975,33 @@ class _WellnessToolsRow extends StatelessWidget {
               subtitle: 'Pick sore spots',
               badge: 'Custom',
               gradient: const [Color(0xFF26A69A), Color(0xFF00796B)],
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 132,
+            child: _ToolCard(
+              onTap: onMindful,
+              emoji: '🧘',
+              title: 'Mindful',
+              subtitle: '5-4-3-2-1',
+              badge:
+                  mindfulToday > 0 ? '$mindfulToday today' : 'Ground',
+              gradient: const [Color(0xFF8E24AA), Color(0xFF5E35B1)],
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 132,
+            child: _ToolCard(
+              onTap: onSleep,
+              emoji: '🌙',
+              title: 'Sleep',
+              subtitle: 'Log last night',
+              badge: latestSleepHours != null
+                  ? '${latestSleepHours!.toStringAsFixed(1)} h'
+                  : 'New',
+              gradient: const [Color(0xFF1A237E), Color(0xFF311B92)],
             ),
           ),
         ],

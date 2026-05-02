@@ -14,6 +14,11 @@ MoveMate nudges you to take short movement breaks during the day, guides you thr
 - **Eye Break (20-20-20)** — guided 30-second three-phase eye-rest with TTS prompts (`eye_break_screen.dart`)
 - **Walk Break** — 1 / 2 / 5-min standing-and-walking timer with TTS cues; logs as cardio (`walk_break_screen.dart`)
 - **Posture Check** — 5-question interactive self-check with score, weak-spot tags, and a tailored 3-min follow-up flow (`posture_check_screen.dart`)
+- **Body Tension Map** — pick the areas that feel tense; the app scores every exercise by overlap and builds a custom session that prioritises your hot spots (`tension_screen.dart`)
+- **Mindful Moment (5-4-3-2-1)** — interactive 5-step grounding exercise with TTS prompts; logs as a breath session (`mindful_screen.dart`)
+- **Sleep journal** — log last night's hours and quality; 7-day average informs the Smart Coach (`sleep_screen.dart`)
+- **Personal Records** — lifetime stats card on the History screen: longest streak, longest single session, best day, totals, top focus, active hours (`records.dart`)
+- **Backup / export** — Settings tile that shares a JSON dump of every setting, session, and log via the system share sheet
 - **Hydration tracking** — daily glass goal with a home-screen pill
 - **Energy check-in** — quick 1-5 emoji tap that feeds the Smart Coach and recommender
 - **Quiet hours** — configurable window that silences reminder notifications (wraps past midnight)
@@ -54,12 +59,12 @@ All app code lives in `lib/`:
 |---|---|
 | `main.dart` | Entry point, theming, onboarding ↔ app routing |
 | `home_screen.dart` | Main dashboard screen |
-| `session_screen.dart`, `breathing_screen.dart`, `focus_screen.dart`, `eye_break_screen.dart`, `walk_break_screen.dart`, `posture_check_screen.dart` | Active sessions and wellness tools |
+| `session_screen.dart`, `breathing_screen.dart`, `focus_screen.dart`, `eye_break_screen.dart`, `walk_break_screen.dart`, `posture_check_screen.dart`, `tension_screen.dart`, `mindful_screen.dart`, `sleep_screen.dart` | Active sessions and wellness tools |
 | `exercise_library.dart`, `custom_builder.dart` | Exercise library and custom builder |
 | `smart_coach.dart`, `recommendations.dart` | Recommendation logic |
 | `storage.dart`, `models.dart` | Persistence and data models |
 | `notification_service.dart`, `tts_service.dart` | Notifications, speech |
-| `wellness_score.dart`, `movement_dna.dart`, `energy_hours.dart`, `body_coverage.dart`, `insights.dart` | Analytics and indicators |
+| `wellness_score.dart`, `movement_dna.dart`, `energy_hours.dart`, `body_coverage.dart`, `insights.dart`, `records.dart` | Analytics and indicators |
 | `achievements.dart`, `daily_challenge.dart`, `daily_mantra.dart`, `weekly_review.dart` | Gamification and summaries |
 | `history_screen.dart`, `calendar_screen.dart` | Session history |
 | `settings_screen.dart`, `onboarding_screen.dart` | Settings and first run |

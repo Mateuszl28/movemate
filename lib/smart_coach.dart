@@ -156,6 +156,36 @@ class SmartCoach {
       }
     }
 
+    // Sleep signal.
+    final sleep = storage.latestSleep;
+    if (sleep != null) {
+      if (sleep.hours < 6) {
+        lines.add(CoachLine(
+            emoji: '🌙',
+            text:
+                'Only ${sleep.hours.toStringAsFixed(1)} h of sleep — favour stretching and breath today.'));
+      } else if (sleep.quality <= 2) {
+        lines.add(const CoachLine(
+            emoji: '☁️',
+            text:
+                'Last night was rough — a mindful moment can take the edge off.'));
+      }
+    } else if (hour >= 6 && hour <= 11 && sessions.length >= 2) {
+      lines.add(const CoachLine(
+          emoji: '🛌',
+          text:
+              'Log how you slept — it tunes today\'s suggestions to your energy.'));
+    }
+
+    // Mindfulness nudge.
+    final mindful = storage.mindfulToday;
+    if (mindful == 0 && hour >= 13 && hour <= 21) {
+      lines.add(const CoachLine(
+          emoji: '🧘',
+          text:
+              'A 1-minute 5-4-3-2-1 grounding fits perfectly between focus blocks.'));
+    }
+
     // Empty-state nudge.
     if (lines.isEmpty) {
       lines.add(const CoachLine(
