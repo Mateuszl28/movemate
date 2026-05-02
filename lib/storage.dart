@@ -752,3 +752,9 @@ class SleepEntry {
   final int quality; // 1..5
   const SleepEntry({required this.hours, required this.quality});
 }
+
+class MoodCheckIn {
+  final DateTime at;
+  final int level; // 1..5
+  const MoodCheckIn({required this.at, required this.level});
+}
