@@ -250,6 +250,17 @@ class _SessionScreenState extends State<SessionScreen>
       if (!mounted) return;
     }
     if (!mounted) return;
+    if (crossedGoal) {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => _DailyGoalDialog(
+          minutes: afterMinutes,
+          goal: goal,
+        ),
+      );
+      if (!mounted) return;
+    }
     if (newlyEarned.isNotEmpty) {
       await showDialog<void>(
         context: context,
