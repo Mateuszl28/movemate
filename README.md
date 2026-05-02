@@ -381,6 +381,10 @@ every push and pull request to `main`.
 - **Wind-down after intensity.** Cardio sessions and any session ≥ 5 min
   trigger a 4-cycle box-breathing modal before the mood prompt — closing the
   loop on intensity with a calm reset rather than a hard stop.
+- **One-tap is the bar.** The Home dashboard is laid out so the most-common
+  next actions (start a recommended session, log mood, soothe a hot pain
+  area, jump to Pain / Eye / Walk / Breathe / Mindful) are reachable in a
+  single tap from the top of the screen.
 
 ---
 
