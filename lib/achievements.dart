@@ -212,6 +212,7 @@ class AchievementCatalog {
       description: 'Hit a 100% posture check.',
       emoji: '🧍',
       check: (s) => (s.bestPostureScore ?? 0) >= 100,
+      progress: (s) => ((s.bestPostureScore ?? 0).clamp(0, 100), 100),
     ),
     Achievement(
       id: 'self_aware',
