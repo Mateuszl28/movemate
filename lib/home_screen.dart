@@ -227,6 +227,408 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _HotPainEntry {
+  final BodyArea area;
+  final int level;
+  const _HotPainEntry(this.area, this.level);
+}
+
+_HotPainEntry? _mostPainfulArea(Storage storage, List<BodyArea> hotAreas) {
+  if (hotAreas.isEmpty) return null;
+  final today = storage.painToday;
+  final avgs = {
+    for (final e in storage.painAveragesByArea()) e.key: e.value,
+  };
+  BodyArea? winner;
+  double bestScore = -1;
+  for (final area in hotAreas) {
+    final todayLvl = (today[area] ?? 0).toDouble();
+    final avg = avgs[area] ?? 0;
+    final score = todayLvl > 0 ? todayLvl : avg;
+    if (score > bestScore) {
+      bestScore = score;
+      winner = area;
+    }
+  }
+  if (winner == null) return null;
+  return _HotPainEntry(winner, bestScore.round());
+}
+
+class _YesterdayStats {
+  final int minutes;
+  final int sessions;
+  final ExerciseCategory? topCategory;
+  final double? avgMoodDelta;
+  const _YesterdayStats({
+    required this.minutes,
+    required this.sessions,
+    required this.topCategory,
+    required this.avgMoodDelta,
+  });
+}
+
+_YesterdayStats? _yesterdayStats(List<SessionRecord> sessions, DateTime now) {
+  final yesterday = DateTime(now.year, now.month, now.day)
+      .subtract(const Duration(days: 1));
+  bool sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+  final list = sessions.where((s) => sameDay(s.completedAt, yesterday)).toList();
+  if (list.isEmpty) return null;
+  final secs = list.fold<int>(0, (sum, s) => sum + s.seconds);
+  final byCat = <ExerciseCategory, int>{};
+  for (final s in list) {
+    byCat.update(s.category, (v) => v + s.seconds, ifAbsent: () => s.seconds);
+  }
+  ExerciseCategory? top;
+  int topSec = 0;
+  byCat.forEach((cat, sec) {
+    if (sec > topSec) {
+      topSec = sec;
+      top = cat;
+    }
+  });
+  final deltas =
+      list.map((s) => s.moodDelta).whereType<int>().toList();
+  final avgDelta =
+      deltas.isEmpty ? null : deltas.reduce((a, b) => a + b) / deltas.length;
+  return _YesterdayStats(
+    minutes: (secs / 60).round(),
+    sessions: list.length,
+    topCategory: top,
+    avgMoodDelta: avgDelta,
+  );
+}
+
+class _QuickActionsRow extends StatelessWidget {
+  final Storage storage;
+  final VoidCallback onSessionComplete;
+  const _QuickActionsRow({
+    required this.storage,
+    required this.onSessionComplete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <_QuickAction>[
+      _QuickAction(
+        emoji: '🩹',
+        label: 'Pain',
+        color: const Color(0xFFEF6C00),
+        onTap: () => Navigator.of(context).push(FadeThroughRoute(
+          builder: (_) => PainJournalScreen(storage: storage),
+        )),
+      ),
+      _QuickAction(
+        emoji: '👀',
+        label: 'Eye break',
+        color: const Color(0xFF26A69A),
+        onTap: () => Navigator.of(context).push(FadeThroughRoute(
+          builder: (_) => EyeBreakScreen(storage: storage),
+        )),
+      ),
+      _QuickAction(
+        emoji: '🚶',
+        label: 'Walk',
+        color: const Color(0xFF7C4DFF),
+        onTap: () => Navigator.of(context).push(FadeThroughRoute(
+          builder: (_) => WalkBreakScreen(storage: storage),
+        )),
+      ),
+      _QuickAction(
+        emoji: '🫁',
+        label: 'Breathe',
+        color: const Color(0xFF42A5F5),
+        onTap: () => Navigator.of(context).push(FadeThroughRoute(
+          builder: (_) => BreathingScreen(storage: storage),
+        )),
+      ),
+      _QuickAction(
+        emoji: '🧘',
+        label: 'Mindful',
+        color: const Color(0xFFAB47BC),
+        onTap: () => Navigator.of(context).push(FadeThroughRoute(
+          builder: (_) => MindfulScreen(storage: storage),
+        )),
+      ),
+    ];
+    return SizedBox(
+      height: 76,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: actions.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        itemBuilder: (_, i) {
+          final a = actions[i];
+          return _QuickActionPill(action: a);
+        },
+      ),
+    );
+  }
+}
+
+class _QuickAction {
+  final String emoji;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _QuickAction({
+    required this.emoji,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+}
+
+class _QuickActionPill extends StatelessWidget {
+  final _QuickAction action;
+  const _QuickActionPill({required this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          action.onTap();
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 86,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: action.color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: action.color.withValues(alpha: 0.30),
+              width: 1.4,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: action.color.withValues(alpha: 0.22),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(action.emoji,
+                    style: const TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                action.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  color: scheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HotPainAlert extends StatelessWidget {
+  final BodyArea area;
+  final int level;
+  final VoidCallback onSoothe;
+  const _HotPainAlert({
+    required this.area,
+    required this.level,
+    required this.onSoothe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFEF6C00), Color(0xFFD84315)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD84315).withValues(alpha: 0.30),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(area.emoji, style: const TextStyle(fontSize: 28)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${area.label} · $level/10',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                      height: 1.1,
+                    )),
+                const SizedBox(height: 2),
+                Text(
+                  'Targeted relief in 3 minutes — gentle on what hurts.',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.92),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: onSoothe,
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: const Color(0xFFD84315),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: const Text('Soothe',
+                style:
+                    TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _YesterdayRecapCard extends StatelessWidget {
+  final _YesterdayStats stats;
+  const _YesterdayRecapCard({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final mood = stats.avgMoodDelta;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: scheme.outline.withValues(alpha: 0.10),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Text('📅', style: TextStyle(fontSize: 22)),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Yesterday',
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    )),
+                const SizedBox(height: 2),
+                Text(
+                  '${stats.minutes} min · ${stats.sessions} session${stats.sessions == 1 ? "" : "s"}'
+                  '${stats.topCategory != null ? " · ${stats.topCategory!.label.toLowerCase()}" : ""}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (mood != null) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: mood >= 0
+                    ? const Color(0xFF50C878).withValues(alpha: 0.18)
+                    : const Color(0xFFE57373).withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(mood >= 0 ? '✨' : '💭',
+                      style: const TextStyle(fontSize: 14)),
+                  const SizedBox(width: 4),
+                  Text(
+                    mood >= 0
+                        ? '+${mood.toStringAsFixed(1)}'
+                        : mood.toStringAsFixed(1),
+                    style: TextStyle(
+                      color: mood >= 0
+                          ? const Color(0xFF1B5E20)
+                          : const Color(0xFFB71C1C),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   final String greeting;
   final String dateLabel;
