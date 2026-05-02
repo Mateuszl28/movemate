@@ -131,6 +131,31 @@ class SmartCoach {
               'Try a 30-second posture check — it tunes your setup before the next focus block.'));
     }
 
+    // Energy check-in signal.
+    final energy = storage.latestEnergy;
+    final todayKey =
+        '${clock.year.toString().padLeft(4, '0')}-${clock.month.toString().padLeft(2, '0')}-${clock.day.toString().padLeft(2, '0')}';
+    final energyToday = storage.energyLog[todayKey];
+    final hasTodayEnergy = energyToday != null && energyToday.isNotEmpty;
+    if (!hasTodayEnergy && hour >= 9 && hour <= 19) {
+      lines.add(const CoachLine(
+          emoji: '⚡',
+          text:
+              'Tap an energy level — it sharpens what I recommend next.'));
+    } else if (hasTodayEnergy && energy != null) {
+      if (energy <= 2) {
+        lines.add(const CoachLine(
+            emoji: '🌙',
+            text:
+                'Low energy logged — keep it gentle: breath or slow stretch.'));
+      } else if (energy >= 4) {
+        lines.add(const CoachLine(
+            emoji: '🚀',
+            text:
+                'High energy logged — perfect window for a cardio burst.'));
+      }
+    }
+
     // Empty-state nudge.
     if (lines.isEmpty) {
       lines.add(const CoachLine(

@@ -20,8 +20,11 @@ Future<void> main() async {
   final storage = await Storage.open();
   await storage.maintainStreakWithFreezes();
   await NotificationService.instance.init();
-  await NotificationService.instance
-      .scheduleReminders(storage.reminderIntervalHours);
+  await NotificationService.instance.scheduleReminders(
+    storage.reminderIntervalHours,
+    quietStart: storage.quietHoursStart,
+    quietEnd: storage.quietHoursEnd,
+  );
   runApp(MoveMateApp(storage: storage));
 }
 

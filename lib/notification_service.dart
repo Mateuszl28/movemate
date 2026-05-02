@@ -68,13 +68,21 @@ class NotificationService {
 
   /// Schedules one daily-repeating notification per slot, starting from the
   /// next slot in the future. Slots are every [intervalHours] hours between
-  /// 09:00 and 20:00 (inclusive of both bounds when divisible).
-  Future<void> scheduleReminders(int intervalHours) async {
+  /// 09:00 and 20:00 (inclusive of both bounds when divisible). Slots whose
+  /// hour falls inside the quiet window [[quietStart], [quietEnd]) are
+  /// skipped. The window may wrap past midnight (e.g. 22 → 8). Pass equal
+  /// values to disable quiet hours.
+  Future<void> scheduleReminders(
+    int intervalHours, {
+    int quietStart = 0,
+    int quietEnd = 0,
+  }) async {
     if (!_initialized) await init();
     await _plugin.cancelAll();
 
     final slots = <int>[];
     for (int h = 9; h <= 20; h += intervalHours) {
+      if (_isHourQuiet(h, quietStart, quietEnd)) continue;
       slots.add(h);
     }
 
@@ -109,5 +117,11 @@ class NotificationService {
         matchDateTimeComponents: DateTimeComponents.time,
       );
     }
+  }
+
+  static bool _isHourQuiet(int hour, int start, int end) {
+    if (start == end) return false;
+    if (start < end) return hour >= start && hour < end;
+    return hour >= start || hour < end;
   }
 }

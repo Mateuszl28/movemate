@@ -10,6 +10,7 @@ import 'eye_break_screen.dart';
 import 'focus_screen.dart';
 import 'models.dart';
 import 'posture_check_screen.dart';
+import 'walk_break_screen.dart';
 import 'recommendations.dart';
 import 'session_screen.dart';
 import 'smart_coach.dart';
@@ -77,6 +78,11 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             _HydrationPill(
+              storage: storage,
+              onChanged: onSessionComplete,
+            ),
+            const SizedBox(height: 10),
+            _EnergyPill(
               storage: storage,
               onChanged: onSessionComplete,
             ),
@@ -179,6 +185,14 @@ class HomeScreen extends StatelessWidget {
                 final ok = await Navigator.of(context).push<bool>(
                   FadeThroughRoute(
                     builder: (_) => EyeBreakScreen(storage: storage),
+                  ),
+                );
+                if (ok == true) onSessionComplete();
+              },
+              onWalkBreak: () async {
+                final ok = await Navigator.of(context).push<bool>(
+                  FadeThroughRoute(
+                    builder: (_) => WalkBreakScreen(storage: storage),
                   ),
                 );
                 if (ok == true) onSessionComplete();
@@ -1740,15 +1754,132 @@ class _DailyMantraCard extends StatelessWidget {
   }
 }
 
+class _EnergyPill extends StatelessWidget {
+  final Storage storage;
+  final VoidCallback onChanged;
+  const _EnergyPill({required this.storage, required this.onChanged});
+
+  static const _emojis = ['😴', '😕', '😐', '🙂', '⚡'];
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final today = _todayEnergy();
+    const accent = Color(0xFFFFB74D);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(18),
+        border:
+            Border.all(color: accent.withValues(alpha: 0.35), width: 1.2),
+      ),
+      child: Row(
+        children: [
+          const Text('⚡', style: TextStyle(fontSize: 22)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                    today == null
+                        ? 'How\'s your energy?'
+                        : 'Energy logged: ${_emojis[today - 1]}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: scheme.onSurface)),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    for (int i = 0; i < _emojis.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: _EnergyDot(
+                          emoji: _emojis[i],
+                          selected: today == i + 1,
+                          onTap: () async {
+                            await storage.logEnergy(i + 1);
+                            HapticFeedback.selectionClick();
+                            onChanged();
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int? _todayEnergy() {
+    final log = storage.energyLog;
+    final now = DateTime.now();
+    final key =
+        '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final today = log[key];
+    return (today == null || today.isEmpty) ? null : today.last;
+  }
+}
+
+class _EnergyDot extends StatelessWidget {
+  final String emoji;
+  final bool selected;
+  final VoidCallback onTap;
+  const _EnergyDot({
+    required this.emoji,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = Color(0xFFFFB74D);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: selected
+                ? accent.withValues(alpha: 0.35)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? accent : Colors.transparent,
+              width: 1.4,
+            ),
+          ),
+          alignment: Alignment.center,
+          child: Text(emoji, style: const TextStyle(fontSize: 18)),
+        ),
+      ),
+    );
+  }
+}
+
 class _WellnessToolsRow extends StatelessWidget {
   final int eyeBreaksToday;
   final int? postureScore;
   final VoidCallback onEyeBreak;
+  final VoidCallback onWalkBreak;
   final VoidCallback onPostureCheck;
   const _WellnessToolsRow({
     required this.eyeBreaksToday,
     required this.postureScore,
     required this.onEyeBreak,
+    required this.onWalkBreak,
     required this.onPostureCheck,
   });
 
@@ -1760,20 +1891,31 @@ class _WellnessToolsRow extends StatelessWidget {
           child: _ToolCard(
             onTap: onEyeBreak,
             emoji: '👀',
-            title: 'Eye break',
+            title: 'Eye',
             subtitle: '20-20-20',
             badge: eyeBreaksToday > 0 ? '$eyeBreaksToday today' : '30s',
             gradient: const [Color(0xFF3D5A80), Color(0xFF293E66)],
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _ToolCard(
+            onTap: onWalkBreak,
+            emoji: '🚶',
+            title: 'Walk',
+            subtitle: '1 / 2 / 5 min',
+            badge: 'Cardio',
+            gradient: const [Color(0xFFE57373), Color(0xFFD84315)],
+          ),
+        ),
+        const SizedBox(width: 8),
         Expanded(
           child: _ToolCard(
             onTap: onPostureCheck,
             emoji: '🧍',
             title: 'Posture',
             subtitle: '5-step check',
-            badge: postureScore != null ? '$postureScore / 100' : 'Run check',
+            badge: postureScore != null ? '$postureScore / 100' : 'Run',
             gradient: const [Color(0xFF7B5CFF), Color(0xFF4A6CFF)],
           ),
         ),

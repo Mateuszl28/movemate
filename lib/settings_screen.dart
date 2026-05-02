@@ -22,6 +22,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late int _themeMode;
   late CoachPersonality _coach;
   late int _hydrationGoal;
+  late int _quietStart;
+  late int _quietEnd;
 
   @override
   void initState() {
@@ -32,6 +34,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _themeMode = widget.storage.themeModeIndex;
     _coach = CoachPersonality.values[widget.storage.coachPersonalityIndex];
     _hydrationGoal = widget.storage.hydrationGoalGlasses;
+    _quietStart = widget.storage.quietHoursStart;
+    _quietEnd = widget.storage.quietHoursEnd;
+  }
+
+  Future<void> _persistQuietHours() async {
+    await widget.storage.setQuietHours(_quietStart, _quietEnd);
+    await NotificationService.instance.scheduleReminders(
+      _reminderHours,
+      quietStart: _quietStart,
+      quietEnd: _quietEnd,
+    );
+    widget.onChanged();
+  }
+
+  String _hourLabel(int h) {
+    final hh = h.toString().padLeft(2, '0');
+    return '$hh:00';
   }
 
   @override
@@ -136,8 +155,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onChangeEnd: (v) async {
                       await widget.storage
                           .setReminderIntervalHours(v.round());
-                      await NotificationService.instance
-                          .scheduleReminders(v.round());
+                      await NotificationService.instance.scheduleReminders(
+                        v.round(),
+                        quietStart: _quietStart,
+                        quietEnd: _quietEnd,
+                      );
                       widget.onChanged();
                     },
                   ),
@@ -145,6 +167,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       'You\'ll get a system notification at every slot between 9 AM and 8 PM.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            _Section(
+              title: 'Quiet hours',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                      _quietStart == _quietEnd
+                          ? 'Disabled — reminders fire at every slot'
+                          : 'No reminders ${_hourLabel(_quietStart)} → ${_hourLabel(_quietEnd)}',
+                      style: const TextStyle(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 8),
+                  Text('Start',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontWeight: FontWeight.w800)),
+                  Slider(
+                    value: _quietStart.toDouble(),
+                    min: 0,
+                    max: 23,
+                    divisions: 23,
+                    label: _hourLabel(_quietStart),
+                    onChanged: (v) =>
+                        setState(() => _quietStart = v.round()),
+                    onChangeEnd: (v) => _persistQuietHours(),
+                  ),
+                  Text('End',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              fontWeight: FontWeight.w800)),
+                  Slider(
+                    value: _quietEnd.toDouble(),
+                    min: 0,
+                    max: 23,
+                    divisions: 23,
+                    label: _hourLabel(_quietEnd),
+                    onChanged: (v) =>
+                        setState(() => _quietEnd = v.round()),
+                    onChangeEnd: (v) => _persistQuietHours(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Set both to the same hour to disable. The window may wrap past midnight (e.g. 22:00 → 08:00).',
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall

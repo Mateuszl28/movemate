@@ -15,6 +15,7 @@ class Recommender {
     final profile = storage.profile;
     final dailyGoal = storage.dailyGoalMinutes;
     final todayMin = storage.todayMinutes;
+    final energy = storage.latestEnergy;
 
     // 1) If today's daily goal is essentially hit, suggest a calming wind-down.
     if (dailyGoal > 0 && todayMin >= dailyGoal) {
@@ -22,6 +23,24 @@ class Recommender {
         plan: ExerciseLibrary.featuredPlans[2], // Wind-down
         reason: 'You hit today\'s goal — finish strong with a wind-down.',
       );
+    }
+
+    // 1b) Energy-driven nudge — only when the user has actually checked in today.
+    if (energy != null && _energyLoggedToday(storage, clock)) {
+      if (energy <= 2) {
+        return SmartRecommendation(
+          plan: ExerciseLibrary.buildQuickPlan(ExerciseCategory.breath),
+          reason:
+              'You flagged low energy — a breathing reset is the gentlest way back.',
+        );
+      }
+      if (energy >= 4) {
+        return SmartRecommendation(
+          plan: ExerciseLibrary.buildQuickPlan(ExerciseCategory.cardio),
+          reason:
+              'High-energy check-in — let\'s spend some of it on a quick cardio burst.',
+        );
+      }
     }
 
     final cutoff = clock.subtract(const Duration(days: 7));
@@ -131,5 +150,13 @@ class Recommender {
       plan: ExerciseLibrary.featuredPlans[0],
       reason: 'Midday slump? A 3-minute desk reset clears the head.',
     );
+  }
+
+  static bool _energyLoggedToday(Storage storage, DateTime clock) {
+    final log = storage.energyLog;
+    final key =
+        '${clock.year.toString().padLeft(4, '0')}-${clock.month.toString().padLeft(2, '0')}-${clock.day.toString().padLeft(2, '0')}';
+    final today = log[key];
+    return today != null && today.isNotEmpty;
   }
 }

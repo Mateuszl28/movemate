@@ -22,6 +22,9 @@ class Storage {
   static const _kHydrationLog = 'hydrationLog'; // JSON map: YYYY-MM-DD -> int
   static const _kEyeBreaksLog = 'eyeBreaksLog'; // JSON map: YYYY-MM-DD -> int
   static const _kPostureLog = 'postureLog';     // JSON map: YYYY-MM-DD -> List<int>
+  static const _kQuietStart = 'quietHoursStart'; // 0..23
+  static const _kQuietEnd = 'quietHoursEnd';     // 0..23
+  static const _kEnergyLog = 'energyLog';        // JSON map: YYYY-MM-DD -> List<int>
 
   static const int maxFreezes = 3;
 
@@ -81,6 +84,7 @@ class Storage {
     await _prefs.remove(_kLastFreezeMilestone);
     await _prefs.remove(_kEyeBreaksLog);
     await _prefs.remove(_kPostureLog);
+    await _prefs.remove(_kEnergyLog);
   }
 
   int get freezesAvailable => _prefs.getInt(_kFreezesAvailable) ?? 0;
@@ -234,6 +238,57 @@ class Storage {
   }
 
   bool get hasRunPostureCheck => postureLog.isNotEmpty;
+
+  /// Quiet hours: notifications are skipped when the slot's hour falls inside
+  /// [quietHoursStart, quietHoursEnd). The window may wrap past midnight
+  /// (e.g. 22 → 8 means 22:00..23:59 plus 00:00..07:59 are quiet).
+  int get quietHoursStart => _prefs.getInt(_kQuietStart) ?? 22;
+  int get quietHoursEnd => _prefs.getInt(_kQuietEnd) ?? 8;
+
+  Future<void> setQuietHours(int start, int end) async {
+    await _prefs.setInt(_kQuietStart, start.clamp(0, 23));
+    await _prefs.setInt(_kQuietEnd, end.clamp(0, 23));
+  }
+
+  bool isHourQuiet(int hour) {
+    final s = quietHoursStart;
+    final e = quietHoursEnd;
+    if (s == e) return false; // disabled
+    if (s < e) return hour >= s && hour < e;
+    // Wraps midnight.
+    return hour >= s || hour < e;
+  }
+
+  /// Daily energy check-ins (1..5). Multiple per day are allowed; the latest
+  /// is what UI surfaces.
+  Map<String, List<int>> get energyLog {
+    final raw = _prefs.getString(_kEnergyLog);
+    if (raw == null || raw.isEmpty) return const {};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map((k, v) => MapEntry(
+        k, (v as List).map((e) => (e as num).toInt()).toList()));
+  }
+
+  int? get latestEnergy {
+    final log = energyLog;
+    final key = _dayKey(DateTime.now());
+    final today = log[key];
+    if (today != null && today.isNotEmpty) return today.last;
+    if (log.isEmpty) return null;
+    final keys = log.keys.toList()..sort();
+    final fallback = log[keys.last];
+    return (fallback == null || fallback.isEmpty) ? null : fallback.last;
+  }
+
+  Future<void> logEnergy(int level) async {
+    final log = Map<String, List<int>>.from(
+        energyLog.map((k, v) => MapEntry(k, List<int>.from(v))));
+    final key = _dayKey(DateTime.now());
+    final list = log[key] ?? <int>[];
+    list.add(level.clamp(1, 5));
+    log[key] = list;
+    await _prefs.setString(_kEnergyLog, jsonEncode(log));
+  }
 
   /// Average posture score over the last [days] days (0..100), or null if no data.
   int? postureAverage({int days = 7}) {
