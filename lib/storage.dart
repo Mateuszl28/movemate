@@ -29,6 +29,7 @@ class Storage {
   static const _kMindfulLog = 'mindfulLog';      // JSON map: YYYY-MM-DD -> int
   static const _kPainLog = 'painLog';            // JSON map: YYYY-MM-DD -> {area: 0..10}
   static const _kLastGoalCelebrated = 'lastGoalCelebrated'; // YYYY-MM-DD
+  static const _kMoodCheckLog = 'moodCheckLog';  // JSON list: [[ms, 1..5], ...]
 
   static const int maxFreezes = 3;
 
