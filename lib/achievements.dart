@@ -6,6 +6,8 @@ class Achievement {
   final String description;
   final String emoji;
   final bool Function(_AchievementStats stats) check;
+  // Optional (current, target) for progress UI. Null for boolean-only badges.
+  final (int, int) Function(_AchievementStats stats)? progress;
 
   const Achievement({
     required this.id,
@@ -13,7 +15,15 @@ class Achievement {
     required this.description,
     required this.emoji,
     required this.check,
+    this.progress,
   });
+}
+
+class AchievementProgress {
+  final int current;
+  final int target;
+  const AchievementProgress(this.current, this.target);
+  double get ratio => target == 0 ? 0 : (current / target).clamp(0.0, 1.0);
 }
 
 class _AchievementStats {
