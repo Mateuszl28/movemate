@@ -628,6 +628,10 @@ class _BodyCoverageSection extends StatelessWidget {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: BodyCoverageRadar(coverage: coverage),
+                    ),
                     for (final e in entries.take(8))
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8),
