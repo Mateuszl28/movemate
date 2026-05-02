@@ -367,4 +367,33 @@ class ExerciseLibrary {
       exercises: exercises,
     );
   }
+
+  /// Builds a relief session that prioritises exercises overlapping the given
+  /// painful body area. Falls back to a gentle stretch session if there are no
+  /// matching exercises tagged with the area.
+  static WorkoutPlan buildQuickPlanForArea(BodyArea area,
+      {int targetSeconds = 180}) {
+    final matching = all.where((e) => e.bodyAreas.contains(area)).toList();
+    if (matching.isEmpty) {
+      return buildQuickPlan(ExerciseCategory.stretch,
+          targetSeconds: targetSeconds);
+    }
+    final exercises = <Exercise>[];
+    int total = 0;
+    int idx = 0;
+    while (total < targetSeconds && exercises.length < 6) {
+      final ex = matching[idx % matching.length];
+      exercises.add(ex);
+      total += ex.seconds;
+      idx++;
+    }
+    final primaryCategory = exercises.first.category;
+    return WorkoutPlan(
+      title: '${area.label} relief',
+      subtitle:
+          '${(total / 60).ceil()} min — focused on ${area.label.toLowerCase()}',
+      primaryCategory: primaryCategory,
+      exercises: exercises,
+    );
+  }
 }
