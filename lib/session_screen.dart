@@ -177,6 +177,10 @@ class _SessionScreenState extends State<SessionScreen>
     if (!mounted) return;
     final note = await askForSessionNote(context);
 
+    final beforeMinutes = widget.storage.todayMinutes;
+    final goal = widget.storage.dailyGoalMinutes;
+    final goalAlreadyHitToday =
+        widget.storage.goalAlreadyCelebratedToday;
     await widget.storage.addSession(SessionRecord(
       completedAt: DateTime.now(),
       planTitle: widget.plan.title,
@@ -186,6 +190,13 @@ class _SessionScreenState extends State<SessionScreen>
       moodAfter: _moodAfter,
       note: note,
     ));
+    final afterMinutes = widget.storage.todayMinutes;
+    final crossedGoal = !goalAlreadyHitToday &&
+        beforeMinutes < goal &&
+        afterMinutes >= goal;
+    if (crossedGoal) {
+      await widget.storage.markGoalCelebratedToday();
+    }
     final newFreezes = await widget.storage.grantFreezesForStreak();
     final streakAfterAdd = widget.storage.currentStreak;
     final lastCelebrated = widget.storage.lastCelebratedStreak;
