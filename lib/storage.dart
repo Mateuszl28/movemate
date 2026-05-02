@@ -463,6 +463,42 @@ class Storage {
     return jsonEncode(out);
   }
 
+  /// Replaces every stored key with the data block from a previous
+  /// [exportAll] payload (or any matching shape). Throws on a malformed
+  /// envelope so the UI can surface an error. Used by the demo seeder and
+  /// for future restore-from-backup support.
+  Future<void> replaceWithImport(String json) async {
+    final raw = jsonDecode(json);
+    if (raw is! Map<String, dynamic>) {
+      throw const FormatException('Backup root must be a JSON object.');
+    }
+    final data = raw['data'];
+    if (data is! Map<String, dynamic>) {
+      throw const FormatException('Backup is missing the "data" object.');
+    }
+    await _prefs.clear();
+    for (final entry in data.entries) {
+      final v = entry.value;
+      if (v is bool) {
+        await _prefs.setBool(entry.key, v);
+      } else if (v is int) {
+        await _prefs.setInt(entry.key, v);
+      } else if (v is double) {
+        await _prefs.setDouble(entry.key, v);
+      } else if (v is String) {
+        await _prefs.setString(entry.key, v);
+      } else if (v is List) {
+        await _prefs.setStringList(
+            entry.key, v.map((e) => e.toString()).toList());
+      } else if (v == null) {
+        // skip
+      } else {
+        // Fallback: stringify anything unexpected.
+        await _prefs.setString(entry.key, jsonEncode(v));
+      }
+    }
+  }
+
   /// Quiet hours: notifications are skipped when the slot's hour falls inside
   /// [quietHoursStart, quietHoursEnd). The window may wrap past midnight
   /// (e.g. 22 → 8 means 22:00..23:59 plus 00:00..07:59 are quiet).

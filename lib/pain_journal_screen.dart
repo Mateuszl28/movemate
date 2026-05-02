@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'body_heatmap.dart';
 import 'models.dart';
 import 'storage.dart';
 
@@ -34,6 +35,95 @@ class _PainJournalScreenState extends State<PainJournalScreen> {
     HapticFeedback.lightImpact();
     setState(() => _today.remove(area));
     await widget.storage.clearPain(area);
+  }
+
+  Future<void> _promptForArea(BodyArea area) async {
+    int level = _today[area] ?? 5;
+    HapticFeedback.lightImpact();
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheet) {
+            final color = _painColor(level);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(area.emoji,
+                          style: const TextStyle(fontSize: 32)),
+                      const SizedBox(width: 10),
+                      Text(area.label,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w900, fontSize: 20)),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text('$level / 10',
+                            style: TextStyle(
+                                color: color,
+                                fontWeight: FontWeight.w900)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(_painWord(level),
+                      style: TextStyle(
+                          color: color, fontWeight: FontWeight.w800)),
+                  SliderTheme(
+                    data: SliderTheme.of(ctx).copyWith(
+                      activeTrackColor: color,
+                      inactiveTrackColor: color.withValues(alpha: 0.2),
+                      thumbColor: color,
+                      overlayColor: color.withValues(alpha: 0.15),
+                    ),
+                    child: Slider(
+                      value: level.toDouble(),
+                      min: 0,
+                      max: 10,
+                      divisions: 10,
+                      label: '$level',
+                      onChanged: (v) => setSheet(() => level = v.round()),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      if ((_today[area] ?? 0) > 0)
+                        TextButton.icon(
+                          icon: const Icon(Icons.delete_outline),
+                          label: const Text('Clear'),
+                          onPressed: () => Navigator.of(ctx).pop(-1),
+                        ),
+                      const Spacer(),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(level),
+                        child: const Text('Save'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+    if (picked == null) return;
+    if (picked == -1) {
+      await _clear(area);
+    } else {
+      await _setLevel(area, picked);
+    }
   }
 
   @override
@@ -91,6 +181,36 @@ class _PainJournalScreenState extends State<PainJournalScreen> {
                       ],
                     ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Text('Body heatmap',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  BodyHeatmap(
+                    pain: _today,
+                    onTap: _promptForArea,
+                  ),
+                  const SizedBox(height: 6),
+                  Text('Tap any region to set today\'s pain level.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              fontStyle: FontStyle.italic)),
                 ],
               ),
             ),

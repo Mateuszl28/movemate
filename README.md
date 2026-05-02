@@ -7,7 +7,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.11%2B-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.11%2B-0175C2?logo=dart)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/tests-21%20passing-2EB872)](#testing)
+[![Tests](https://img.shields.io/badge/tests-25%20passing-2EB872)](#testing)
 [![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android)](https://android.com)
 
 ---
@@ -66,8 +66,9 @@ account.
 - **Custom builder** — pick any exercises, set durations, save and run
 
 ### 📓 Journals
-- **Pain Journal** — per-body-area pain (0–10) with 14-day sparkline charts,
-  drives the adaptive plan + coach
+- **Pain Journal** — per-body-area pain (0–10) with an **interactive body
+  heatmap** (front-view silhouette that tints by pain level) plus 14-day
+  sparkline charts; drives the adaptive plan + coach
 - **Sleep journal** — last night's hours and 1–5 quality, surfaces 7-day avg
 - **Energy check-in** — quick 1–5 emoji tap that influences recommendations
 - **Mood + notes** — captured per session
@@ -88,6 +89,9 @@ account.
   midnight
 - **Backup / export** — share a JSON dump of all settings, sessions, and
   logs via the system share sheet
+- **Demo seeder** — Settings tile that loads a 30-day realistic snapshot
+  (sessions, healing back-pain trend, sleep, energy, hydration, posture)
+  for instant demos and screenshots
 - **Light / dark / auto theme**, configurable coach voice personality,
   hydration & daily-minutes goals
 
@@ -180,7 +184,8 @@ lib/
   posture_check_screen.dart  5-question self-check + tailored follow-up
   tension_screen.dart        Body-area picker → custom session builder
   sleep_screen.dart          Hours + quality entry
-  pain_journal_screen.dart   Per-area pain log with 14-day sparkline
+  pain_journal_screen.dart   Per-area pain log with body heatmap + 14-day sparkline
+  body_heatmap.dart          Stack-based front-view body silhouette, tints by pain
   weekly_plan_screen.dart    Adaptive 7-day plan view
   custom_builder.dart        Pick exercises, set durations
   onboarding_screen.dart     First-run flow
@@ -208,6 +213,7 @@ lib/
   transitions.dart           FadeThroughRoute
   exercise_library.dart      30+ exercises across 4 categories + featured plans
   share_card.dart            Render shareable PNG of a session
+  demo_seeder.dart           Generate a 30-day realistic snapshot for demos
   wellness_detail_screen.dart  Score breakdown drill-down
   weekly_review.dart         Monday-morning weekly summary popup
   calendar_screen.dart       Month grid of activity
@@ -218,6 +224,10 @@ test/
   records_test.dart          PersonalRecords algorithms
   adaptive_plan_test.dart    Adaptive 7-day plan generator
   storage_test.dart          Pain / sleep / quiet-hours storage round-trips
+  demo_seeder_test.dart      Demo snapshot shape + downstream effects
+
+.github/workflows/
+  ci.yml                     Flutter analyze + test on push / PR
 ```
 
 ---
@@ -252,11 +262,16 @@ flutter analyze
 flutter test
 ```
 
-Coverage focuses on the algorithmic core (records, adaptive plan, storage).
-The 21 tests in `test/` are framework-light (`shared_preferences` is mocked
-via `setMockInitialValues`), run in under 6 seconds, and exercise the
-interesting branches: streak gaps, day-sums, plan variation under sleep
-deficit and pain flags, quiet-hours wrap-around past midnight, etc.
+Coverage focuses on the algorithmic core (records, adaptive plan, storage,
+demo seeder). The 25 tests in `test/` are framework-light
+(`shared_preferences` is mocked via `setMockInitialValues`), run in under
+6 seconds, and exercise the interesting branches: streak gaps, day-sums,
+plan variation under sleep deficit and pain flags, quiet-hours wrap-around
+past midnight, demo seeder produces a healing trend, etc.
+
+The included **GitHub Actions workflow** (`.github/workflows/ci.yml`) runs
+`flutter analyze --no-fatal-infos` + `flutter test --reporter expanded` on
+every push and pull request to `main`.
 
 ---
 

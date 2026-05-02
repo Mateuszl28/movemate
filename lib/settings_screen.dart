@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'demo_seeder.dart';
 import 'models.dart';
 import 'notification_service.dart';
 import 'storage.dart';
@@ -55,6 +56,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String _hourLabel(int h) {
     final hh = h.toString().padLeft(2, '0');
     return '$hh:00';
+  }
+
+  Future<void> _loadDemoData() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Load demo data?'),
+        content: const Text(
+            'Replaces all current data with a 30-day realistic snapshot — sessions, pain trend, sleep, energy, hydration, eye breaks, posture. Useful for showcasing the app in a demo.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Load demo'),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    await widget.storage.replaceWithImport(DemoSeeder.generate());
+    widget.onChanged();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Demo data loaded.')),
+    );
   }
 
   Future<void> _exportData() async {
@@ -351,6 +380,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         'Share a JSON dump of every setting, session, and log.'),
                     trailing: const Icon(Icons.ios_share),
                     onTap: _exportData,
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Load demo data'),
+                    subtitle: const Text(
+                        'Replace local state with a 30-day realistic snapshot.'),
+                    trailing: const Icon(Icons.science_outlined),
+                    onTap: _loadDemoData,
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
