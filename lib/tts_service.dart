@@ -57,6 +57,17 @@ extension CoachPersonalityX on CoachPersonality {
         return 0.90;
     }
   }
+
+  String get sampleLine {
+    switch (this) {
+      case CoachPersonality.calm:
+        return 'Take a slow breath. Settle into the moment.';
+      case CoachPersonality.upbeat:
+        return "Let's go! Two minutes of movement, you've got this.";
+      case CoachPersonality.strict:
+        return 'Stand up. Hold for ten seconds. Begin now.';
+    }
+  }
 }
 
 class TtsService {
