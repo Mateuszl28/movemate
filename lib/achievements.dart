@@ -196,6 +196,7 @@ class AchievementCatalog {
       description: 'Complete 3 eye breaks in a single day.',
       emoji: '👀',
       check: (s) => s.eyeBreaksToday >= 3,
+      progress: (s) => (s.eyeBreaksToday.clamp(0, 3), 3),
     ),
     Achievement(
       id: 'wide_focus',
@@ -203,6 +204,7 @@ class AchievementCatalog {
       description: 'Take 10 eye breaks across the week.',
       emoji: '🔭',
       check: (s) => s.eyeBreaksWeek >= 10,
+      progress: (s) => (s.eyeBreaksWeek.clamp(0, 10), 10),
     ),
     Achievement(
       id: 'aligned',
