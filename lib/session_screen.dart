@@ -786,67 +786,254 @@ class _StreakMilestoneDialogState extends State<_StreakMilestoneDialog> {
   }
 }
 
-class _AchievementsUnlockedDialog extends StatelessWidget {
+class _AchievementsUnlockedDialog extends StatefulWidget {
   final List<Achievement> achievements;
   const _AchievementsUnlockedDialog({required this.achievements});
 
   @override
+  State<_AchievementsUnlockedDialog> createState() =>
+      _AchievementsUnlockedDialogState();
+}
+
+class _AchievementsUnlockedDialogState
+    extends State<_AchievementsUnlockedDialog>
+    with SingleTickerProviderStateMixin {
+  late final ConfettiController _confetti;
+  late final AnimationController _trophyPulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _confetti = ConfettiController(duration: const Duration(seconds: 3));
+    _trophyPulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      HapticFeedback.mediumImpact();
+      _confetti.play();
+    });
+  }
+
+  @override
+  void dispose() {
+    _confetti.dispose();
+    _trophyPulse.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      contentPadding: const EdgeInsets.fromLTRB(24, 28, 24, 16),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
+    final isMulti = widget.achievements.length > 1;
+    final headline = isMulti
+        ? '${widget.achievements.length} achievements unlocked!'
+        : 'Achievement unlocked!';
+
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.topCenter,
         children: [
-          const Text('🏆', style: TextStyle(fontSize: 56)),
-          const SizedBox(height: 8),
-          Text(
-              achievements.length == 1
-                  ? 'Achievement unlocked!'
-                  : '${achievements.length} achievements unlocked!',
-              textAlign: TextAlign.center,
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 16),
-          ...achievements.map((a) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    Text(a.emoji, style: const TextStyle(fontSize: 32)),
-                    const SizedBox(width: 12),
-                    Expanded(
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF7C4DFF),
+                  Color(0xFFFF6F61),
+                  Color(0xFFFFC107),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF7C4DFF).withValues(alpha: 0.4),
+                  blurRadius: 32,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(2),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(26),
+                color: Theme.of(context).colorScheme.surface,
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  AnimatedBuilder(
+                    animation: _trophyPulse,
+                    builder: (_, __) {
+                      final s = 1.0 + 0.08 * _trophyPulse.value;
+                      return Transform.scale(
+                        scale: s,
+                        child: ShaderMask(
+                          shaderCallback: (rect) => const LinearGradient(
+                            colors: [Color(0xFFFFC107), Color(0xFFFF6F61)],
+                          ).createShader(rect),
+                          child: const Text('🏆',
+                              style: TextStyle(
+                                  fontSize: 72, color: Colors.white)),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Text(headline,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w900)),
+                  const SizedBox(height: 18),
+                  Flexible(
+                    child: SingleChildScrollView(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(a.name,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.w800)),
-                          Text(a.description,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant)),
+                          for (var i = 0; i < widget.achievements.length; i++)
+                            _AnimatedAchievementRow(
+                              achievement: widget.achievements[i],
+                              index: i,
+                            ),
                         ],
                       ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text('Keep going',
+                          style: TextStyle(fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: -40,
+            child: ConfettiWidget(
+              confettiController: _confetti,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              numberOfParticles: 26,
+              maxBlastForce: 22,
+              minBlastForce: 8,
+              gravity: 0.25,
+              emissionFrequency: 0.04,
+              colors: const [
+                Color(0xFF7C4DFF),
+                Color(0xFFFF6F61),
+                Color(0xFFFFC107),
+                Color(0xFF4CAF50),
+                Color(0xFF29B6F6),
+              ],
+            ),
+          ),
         ],
       ),
-      actions: [
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Nice!'),
+    );
+  }
+}
+
+class _AnimatedAchievementRow extends StatelessWidget {
+  final Achievement achievement;
+  final int index;
+  const _AnimatedAchievementRow(
+      {required this.achievement, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 380 + index * 90),
+      curve: Curves.elasticOut,
+      builder: (_, t, child) {
+        final clamped = t.clamp(0.0, 1.0);
+        return Opacity(
+          opacity: clamped,
+          child: Transform.translate(
+            offset: Offset(0, (1 - clamped) * 16),
+            child: Transform.scale(scale: 0.6 + 0.4 * clamped, child: child),
+          ),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.35),
+            border: Border.all(
+              color: Theme.of(context)
+                  .colorScheme
+                  .primary
+                  .withValues(alpha: 0.25),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFFC107), Color(0xFFFF6F61)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFC107).withValues(alpha: 0.45),
+                      blurRadius: 14,
+                    ),
+                  ],
+                ),
+                child: Text(achievement.emoji,
+                    style: const TextStyle(fontSize: 28)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(achievement.name,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 2),
+                    Text(achievement.description,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }

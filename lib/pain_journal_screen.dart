@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'body_heatmap.dart';
 import 'models.dart';
+import 'pain_report_card.dart';
 import 'storage.dart';
 
 /// Pain journal — log current pain (0..10) per body area, see a 14-day trend
@@ -126,6 +127,27 @@ class _PainJournalScreenState extends State<PainJournalScreen> {
     }
   }
 
+  Future<void> _share() async {
+    if (widget.storage.painLog.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Log a few entries first — the report needs data to share.'),
+        ),
+      );
+      return;
+    }
+    HapticFeedback.lightImpact();
+    try {
+      await sharePainReport(context, widget.storage);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not generate report.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -139,6 +161,13 @@ class _PainJournalScreenState extends State<PainJournalScreen> {
       appBar: AppBar(
         title: const Text('Pain journal'),
         backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            tooltip: 'Share 30-day report',
+            icon: const Icon(Icons.ios_share_rounded),
+            onPressed: _share,
+          ),
+        ],
       ),
       body: SafeArea(
         child: ListView(
