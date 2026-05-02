@@ -54,7 +54,7 @@ All app code lives in `lib/`:
 |---|---|
 | `main.dart` | Entry point, theming, onboarding ↔ app routing |
 | `home_screen.dart` | Main dashboard screen |
-| `session_screen.dart`, `breathing_screen.dart`, `focus_screen.dart`, `eye_break_screen.dart`, `posture_check_screen.dart` | Active sessions and wellness tools |
+| `session_screen.dart`, `breathing_screen.dart`, `focus_screen.dart`, `eye_break_screen.dart`, `walk_break_screen.dart`, `posture_check_screen.dart` | Active sessions and wellness tools |
 | `exercise_library.dart`, `custom_builder.dart` | Exercise library and custom builder |
 | `smart_coach.dart`, `recommendations.dart` | Recommendation logic |
 | `storage.dart`, `models.dart` | Persistence and data models |
