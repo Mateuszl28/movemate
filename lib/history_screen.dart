@@ -12,6 +12,7 @@ import 'movement_dna.dart';
 import 'records.dart';
 import 'storage.dart';
 import 'transitions.dart';
+import 'weekly_recap_card.dart';
 
 class HistoryScreen extends StatelessWidget {
   final Storage storage;
@@ -58,6 +59,31 @@ class HistoryScreen extends StatelessWidget {
                           .headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w800)),
                 ),
+                IconButton.filledTonal(
+                  icon: const Icon(Icons.ios_share_rounded),
+                  tooltip: 'Share weekly recap',
+                  onPressed: () async {
+                    if (sessions.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Finish a session first — the recap needs data.'),
+                        ),
+                      );
+                      return;
+                    }
+                    try {
+                      await shareWeeklyRecap(context, storage);
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Could not generate recap.')),
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(width: 8),
                 IconButton.filledTonal(
                   icon: const Icon(Icons.calendar_month),
                   tooltip: 'Open calendar',
