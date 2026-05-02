@@ -902,7 +902,11 @@ class _RecordTile extends StatelessWidget {
 
 class _AchievementsSection extends StatelessWidget {
   final Set<String> earnedIds;
-  const _AchievementsSection({required this.earnedIds});
+  final Map<String, AchievementProgress> progressMap;
+  const _AchievementsSection({
+    required this.earnedIds,
+    required this.progressMap,
+  });
 
   @override
   Widget build(BuildContext context) {
