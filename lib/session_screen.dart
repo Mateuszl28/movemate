@@ -890,7 +890,7 @@ class _DailyGoalDialogState extends State<_DailyGoalDialog> {
               const SizedBox(height: 8),
               Text(
                   extra > 0
-                      ? '${widget.minutes} minutes today — ${extra} past your ${widget.goal}-min goal.'
+                      ? '${widget.minutes} minutes today — $extra past your ${widget.goal}-min goal.'
                       : '${widget.minutes} minutes today — goal reached.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
