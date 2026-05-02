@@ -80,6 +80,9 @@ account.
 - **Sleep journal** — last night's hours and 1–5 quality, surfaces 7-day avg
 - **Energy check-in** — quick 1–5 emoji tap that influences recommendations
 - **Mood + notes** — captured per session
+- **Mood quick-log on Home** — standalone 5-emoji bar (😞 😕 😐 🙂 😄) that
+  logs how you feel right now without starting a session; auto-collapses for
+  4 hours after a fresh log, expands again when stale
 - **Mood line chart** — smooth 14-session area chart on Progress with green
   fill above the zero baseline and red fill below
 - **Hydration** — daily glass goal with a single-tap pill
