@@ -27,6 +27,7 @@ class Storage {
   static const _kEnergyLog = 'energyLog';        // JSON map: YYYY-MM-DD -> List<int>
   static const _kSleepLog = 'sleepLog';          // JSON map: YYYY-MM-DD -> {h, q}
   static const _kMindfulLog = 'mindfulLog';      // JSON map: YYYY-MM-DD -> int
+  static const _kPainLog = 'painLog';            // JSON map: YYYY-MM-DD -> {area: 0..10}
 
   static const int maxFreezes = 3;
 
@@ -89,6 +90,7 @@ class Storage {
     await _prefs.remove(_kEnergyLog);
     await _prefs.remove(_kSleepLog);
     await _prefs.remove(_kMindfulLog);
+    await _prefs.remove(_kPainLog);
   }
 
   int get freezesAvailable => _prefs.getInt(_kFreezesAvailable) ?? 0;
@@ -336,6 +338,115 @@ class Storage {
     final key = _dayKey(DateTime.now());
     log[key] = (log[key] ?? 0) + 1;
     await _prefs.setString(_kMindfulLog, jsonEncode(log));
+  }
+
+  /// Per-day, per-body-area pain log on a 0..10 scale. The latest value for a
+  /// given day overwrites earlier entries — pain is the user's current read.
+  Map<String, Map<BodyArea, int>> get painLog {
+    final raw = _prefs.getString(_kPainLog);
+    if (raw == null || raw.isEmpty) return const {};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map((k, v) {
+      final inner = (v as Map<String, dynamic>).map(
+        (areaName, level) {
+          final area = BodyArea.values.firstWhere(
+              (a) => a.name == areaName,
+              orElse: () => BodyArea.fullBody);
+          return MapEntry(area, (level as num).toInt());
+        },
+      );
+      return MapEntry(k, inner);
+    });
+  }
+
+  Map<BodyArea, int> get painToday =>
+      painLog[_dayKey(DateTime.now())] ?? const {};
+
+  Future<void> logPain(BodyArea area, int level) async {
+    final log = Map<String, Map<BodyArea, int>>.from(
+      painLog.map((k, v) => MapEntry(k, Map<BodyArea, int>.from(v))),
+    );
+    final key = _dayKey(DateTime.now());
+    final today = log[key] ?? <BodyArea, int>{};
+    today[area] = level.clamp(0, 10);
+    log[key] = today;
+    final encoded = log.map((day, areas) => MapEntry(
+        day,
+        areas.map((a, lvl) => MapEntry(a.name, lvl)),
+      ));
+    await _prefs.setString(_kPainLog, jsonEncode(encoded));
+  }
+
+  Future<void> clearPain(BodyArea area) async {
+    final log = Map<String, Map<BodyArea, int>>.from(
+      painLog.map((k, v) => MapEntry(k, Map<BodyArea, int>.from(v))),
+    );
+    final key = _dayKey(DateTime.now());
+    final today = log[key];
+    if (today == null) return;
+    today.remove(area);
+    if (today.isEmpty) {
+      log.remove(key);
+    } else {
+      log[key] = today;
+    }
+    final encoded = log.map((day, areas) => MapEntry(
+        day,
+        areas.map((a, lvl) => MapEntry(a.name, lvl)),
+      ));
+    await _prefs.setString(_kPainLog, jsonEncode(encoded));
+  }
+
+  /// Average pain per body area across the last [days] days that had any
+  /// entries for that area. Returns areas sorted by average pain descending.
+  List<MapEntry<BodyArea, double>> painAveragesByArea({int days = 7}) {
+    final log = painLog;
+    if (log.isEmpty) return const [];
+    final now = DateTime.now();
+    final sums = <BodyArea, double>{};
+    final counts = <BodyArea, int>{};
+    for (int i = 0; i < days; i++) {
+      final key = _dayKey(now.subtract(Duration(days: i)));
+      final entry = log[key];
+      if (entry == null) continue;
+      entry.forEach((area, lvl) {
+        sums.update(area, (v) => v + lvl, ifAbsent: () => lvl.toDouble());
+        counts.update(area, (v) => v + 1, ifAbsent: () => 1);
+      });
+    }
+    final out = <MapEntry<BodyArea, double>>[];
+    sums.forEach((area, sum) {
+      out.add(MapEntry(area, sum / counts[area]!));
+    });
+    out.sort((a, b) => b.value.compareTo(a.value));
+    return out;
+  }
+
+  /// Per-day series for a single area over the last [days] days. Days with
+  /// no entry are reported as null so the chart can show gaps.
+  List<int?> painSeries(BodyArea area, {int days = 14}) {
+    final log = painLog;
+    final now = DateTime.now();
+    final out = <int?>[];
+    for (int i = days - 1; i >= 0; i--) {
+      final key = _dayKey(now.subtract(Duration(days: i)));
+      out.add(log[key]?[area]);
+    }
+    return out;
+  }
+
+  /// Areas where the user is currently flagging pain ≥ 4 either today or as
+  /// a 7-day average. Used by Smart Coach + adaptive plan to prioritise.
+  List<BodyArea> hotPainAreas({int threshold = 4}) {
+    final today = painToday;
+    final picked = <BodyArea>{};
+    today.forEach((area, lvl) {
+      if (lvl >= threshold) picked.add(area);
+    });
+    for (final entry in painAveragesByArea()) {
+      if (entry.value >= threshold) picked.add(entry.key);
+    }
+    return picked.toList();
   }
 
   /// Returns a JSON-encoded snapshot of every key currently stored. Includes a

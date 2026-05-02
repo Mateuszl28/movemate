@@ -8,6 +8,7 @@ import 'notification_service.dart';
 import 'onboarding_screen.dart';
 import 'settings_screen.dart';
 import 'storage.dart';
+import 'tools_screen.dart';
 import 'weekly_review.dart';
 
 Future<void> main() async {
@@ -163,6 +164,11 @@ class _AppShellState extends State<AppShell> {
       HomeScreen(
         storage: widget.storage,
         onSessionComplete: _refresh,
+        onOpenTools: () => setState(() => _index = 1),
+      ),
+      ToolsScreen(
+        storage: widget.storage,
+        onSessionComplete: _refresh,
       ),
       HistoryScreen(storage: widget.storage),
       SettingsScreen(
@@ -179,6 +185,10 @@ class _AppShellState extends State<AppShell> {
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home),
               label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.dashboard_customize_outlined),
+              selectedIcon: Icon(Icons.dashboard_customize),
+              label: 'Tools'),
           NavigationDestination(
               icon: Icon(Icons.show_chart_outlined),
               selectedIcon: Icon(Icons.show_chart),

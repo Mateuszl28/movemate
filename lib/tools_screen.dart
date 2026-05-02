@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'animated_widgets.dart';
 import 'breathing_screen.dart';
 import 'custom_builder.dart';
 import 'exercise_library.dart';
@@ -7,6 +8,7 @@ import 'eye_break_screen.dart';
 import 'focus_screen.dart';
 import 'mindful_screen.dart';
 import 'models.dart';
+import 'pain_journal_screen.dart';
 import 'posture_check_screen.dart';
 import 'session_screen.dart';
 import 'sleep_screen.dart';
@@ -14,6 +16,7 @@ import 'storage.dart';
 import 'tension_screen.dart';
 import 'transitions.dart';
 import 'walk_break_screen.dart';
+import 'weekly_plan_screen.dart';
 
 /// All the "what can I do right now?" surfaces — wellness tools, daily
 /// rituals, builders, categories, plans. Pulled off the Home dashboard so the
@@ -31,126 +34,170 @@ class ToolsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-          children: [
-            Text('Tools',
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(
-                'Pick a quick reset, a guided ritual, or build your own session.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant)),
-            const SizedBox(height: 20),
-            _SectionHeader(
-              title: 'Wellness tools',
-              hint: 'Micro-breaks for body, mind, and rest.',
-            ),
-            const SizedBox(height: 12),
-            _WellnessToolsRow(
-              eyeBreaksToday: storage.eyeBreaksToday,
-              postureScore: storage.latestPostureScore,
-              mindfulToday: storage.mindfulToday,
-              latestSleepHours: storage.latestSleep?.hours,
-              onEyeBreak: () =>
-                  _push(context, EyeBreakScreen(storage: storage)),
-              onWalkBreak: () =>
-                  _push(context, WalkBreakScreen(storage: storage)),
-              onPostureCheck: () =>
-                  _push(context, PostureCheckScreen(storage: storage)),
-              onTensionMap: () =>
-                  _push(context, TensionScreen(storage: storage)),
-              onMindful: () =>
-                  _push(context, MindfulScreen(storage: storage)),
-              onSleep: () => _push(context, SleepScreen(storage: storage)),
-            ),
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'Daily rituals',
-              hint: 'A flow tuned to your time of day.',
-            ),
-            const SizedBox(height: 12),
-            _RitualsRow(
-              onTap: (idx) =>
-                  _startPlan(context, ExerciseLibrary.featuredPlans[idx]),
-            ),
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'Quick starts',
-              hint: 'Custom mix, focus block, or guided breath.',
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _BuildYourOwnTile(
-                    onTap: () async {
-                      final plan = await showCustomBuilder(context);
-                      if (plan != null && context.mounted) {
-                        await _startPlan(context, plan);
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _FocusModeTile(
-                    onTap: () {
-                      Navigator.of(context).push(FadeThroughRoute(
-                        builder: (_) => FocusScreen(storage: storage),
-                      ));
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _BreathingTile(
-                    onTap: () async {
-                      final logged = await Navigator.of(context).push<bool>(
-                        FadeThroughRoute(
-                          builder: (_) =>
-                              BreathingScreen(storage: storage),
-                        ),
-                      );
-                      if (logged == true) onSessionComplete();
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'Categories',
-              hint: 'Browse the full library by intent.',
-            ),
-            const SizedBox(height: 12),
-            _CategoryGrid(
-              onTap: (cat) {
-                final plan = ExerciseLibrary.buildQuickPlan(cat);
-                _startPlan(context, plan);
-              },
-            ),
-            const SizedBox(height: 24),
-            _SectionHeader(
-              title: 'Featured plans',
-              hint: 'Curated combos for common moments.',
-            ),
-            const SizedBox(height: 12),
-            ...ExerciseLibrary.featuredPlans.map(
-              (p) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: _PlanTile(
-                  plan: p,
-                  onTap: () => _startPlan(context, p),
+
+    final sections = <Widget>[
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Tools',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(
+              'Pick a quick reset, a guided ritual, or build your own session.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant)),
+        ],
+      ),
+      _AdaptivePlanCard(
+        onTap: () =>
+            _push(context, WeeklyPlanScreen(storage: storage)),
+      ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _SectionHeader(
+            title: 'Wellness tools',
+            hint: 'Micro-breaks for body, mind, and rest.',
+          ),
+          const SizedBox(height: 12),
+          _WellnessToolsRow(
+            eyeBreaksToday: storage.eyeBreaksToday,
+            postureScore: storage.latestPostureScore,
+            mindfulToday: storage.mindfulToday,
+            latestSleepHours: storage.latestSleep?.hours,
+            painCount: storage.painToday.length,
+            onEyeBreak: () =>
+                _push(context, EyeBreakScreen(storage: storage)),
+            onWalkBreak: () =>
+                _push(context, WalkBreakScreen(storage: storage)),
+            onPostureCheck: () =>
+                _push(context, PostureCheckScreen(storage: storage)),
+            onTensionMap: () =>
+                _push(context, TensionScreen(storage: storage)),
+            onMindful: () =>
+                _push(context, MindfulScreen(storage: storage)),
+            onSleep: () => _push(context, SleepScreen(storage: storage)),
+            onPainJournal: () =>
+                _push(context, PainJournalScreen(storage: storage)),
+          ),
+        ],
+      ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _SectionHeader(
+            title: 'Daily rituals',
+            hint: 'A flow tuned to your time of day.',
+          ),
+          const SizedBox(height: 12),
+          _RitualsRow(
+            onTap: (idx) =>
+                _startPlan(context, ExerciseLibrary.featuredPlans[idx]),
+          ),
+        ],
+      ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _SectionHeader(
+            title: 'Quick starts',
+            hint: 'Custom mix, focus block, or guided breath.',
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _BuildYourOwnTile(
+                  onTap: () async {
+                    final plan = await showCustomBuilder(context);
+                    if (plan != null && context.mounted) {
+                      await _startPlan(context, plan);
+                    }
+                  },
                 ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _FocusModeTile(
+                  onTap: () {
+                    Navigator.of(context).push(FadeThroughRoute(
+                      builder: (_) => FocusScreen(storage: storage),
+                    ));
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _BreathingTile(
+                  onTap: () async {
+                    final logged = await Navigator.of(context).push<bool>(
+                      FadeThroughRoute(
+                        builder: (_) =>
+                            BreathingScreen(storage: storage),
+                      ),
+                    );
+                    if (logged == true) onSessionComplete();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _SectionHeader(
+            title: 'Categories',
+            hint: 'Browse the full library by intent.',
+          ),
+          const SizedBox(height: 12),
+          _CategoryGrid(
+            onTap: (cat) {
+              final plan = ExerciseLibrary.buildQuickPlan(cat);
+              _startPlan(context, plan);
+            },
+          ),
+        ],
+      ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _SectionHeader(
+            title: 'Featured plans',
+            hint: 'Curated combos for common moments.',
+          ),
+          const SizedBox(height: 12),
+          for (final p in ExerciseLibrary.featuredPlans)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _PlanTile(
+                plan: p,
+                onTap: () => _startPlan(context, p),
+              ),
             ),
-          ],
+        ],
+      ),
+    ];
+
+    return Scaffold(
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await Future<void>.delayed(const Duration(milliseconds: 250));
+            onSessionComplete();
+          },
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: sections.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 22),
+            itemBuilder: (_, i) =>
+                StaggeredFadeIn(index: i, child: sections[i]),
+          ),
         ),
       ),
     );
@@ -170,6 +217,68 @@ class ToolsScreen extends StatelessWidget {
       ),
     );
     if (completed == true) onSessionComplete();
+  }
+}
+
+class _AdaptivePlanCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AdaptivePlanCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return PressableCard(
+      onTap: onTap,
+      borderRadius: 22,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: LinearGradient(
+            colors: [scheme.primary, scheme.tertiary],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: scheme.primary.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Text('🗓️', style: TextStyle(fontSize: 36)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Adaptive 7-day plan',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1)),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Generated from your profile, body coverage, pain, sleep, and energy.',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.white70, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward, color: Colors.white),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -203,23 +312,27 @@ class _WellnessToolsRow extends StatelessWidget {
   final int? postureScore;
   final int mindfulToday;
   final double? latestSleepHours;
+  final int painCount;
   final VoidCallback onEyeBreak;
   final VoidCallback onWalkBreak;
   final VoidCallback onPostureCheck;
   final VoidCallback onTensionMap;
   final VoidCallback onMindful;
   final VoidCallback onSleep;
+  final VoidCallback onPainJournal;
   const _WellnessToolsRow({
     required this.eyeBreaksToday,
     required this.postureScore,
     required this.mindfulToday,
     required this.latestSleepHours,
+    required this.painCount,
     required this.onEyeBreak,
     required this.onWalkBreak,
     required this.onPostureCheck,
     required this.onTensionMap,
     required this.onMindful,
     required this.onSleep,
+    required this.onPainJournal,
   });
 
   @override
@@ -302,6 +415,18 @@ class _WellnessToolsRow extends StatelessWidget {
                   ? '${latestSleepHours!.toStringAsFixed(1)} h'
                   : 'New',
               gradient: const [Color(0xFF1A237E), Color(0xFF311B92)],
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 132,
+            child: _ToolCard(
+              onTap: onPainJournal,
+              emoji: '🩹',
+              title: 'Pain',
+              subtitle: 'Log + 14d trend',
+              badge: painCount > 0 ? '$painCount today' : 'New',
+              gradient: const [Color(0xFFEF6C00), Color(0xFFD84315)],
             ),
           ),
         ],

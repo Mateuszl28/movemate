@@ -87,6 +87,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 20),
             _Section(
               title: 'Activity profile',
+              icon: Icons.accessibility_new,
+              accent: const Color(0xFF2EB872),
               child: Column(
                 children: [
                   for (final p in ActivityProfile.values)
@@ -110,6 +112,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _Section(
               title: 'Daily goal',
+              icon: Icons.flag_outlined,
+              accent: const Color(0xFFE57373),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -133,6 +137,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _Section(
               title: 'Hydration goal',
+              icon: Icons.water_drop_outlined,
+              accent: const Color(0xFF1E88E5),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -158,6 +164,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _Section(
               title: 'Reminders',
+              icon: Icons.notifications_active_outlined,
+              accent: const Color(0xFFFFB74D),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -201,6 +209,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _Section(
               title: 'Quiet hours',
+              icon: Icons.bedtime_outlined,
+              accent: const Color(0xFF7B5CFF),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -267,6 +277,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _Section(
               title: 'Coach voice',
+              icon: Icons.record_voice_over_outlined,
+              accent: const Color(0xFF26A69A),
               child: Column(
                 children: [
                   for (final p in CoachPersonality.values)
@@ -299,6 +311,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _Section(
               title: 'Appearance',
+              icon: Icons.palette_outlined,
+              accent: const Color(0xFF8E24AA),
               child: Column(
                 children: [
                   for (final entry in const [
@@ -326,6 +340,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
             _Section(
               title: 'Data',
+              icon: Icons.dataset_outlined,
+              accent: const Color(0xFF607D8B),
               child: Column(
                 children: [
                   ListTile(
@@ -394,25 +410,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 class _Section extends StatelessWidget {
   final String title;
+  final IconData? icon;
+  final Color? accent;
   final Widget child;
-  const _Section({required this.title, required this.child});
+  const _Section({
+    required this.title,
+    this.icon,
+    this.accent,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final color = accent ?? scheme.primary;
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        color: scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w800)),
+          Row(
+            children: [
+              if (icon != null) ...[
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(icon, color: color, size: 16),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           child,
         ],

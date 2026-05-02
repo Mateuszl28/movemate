@@ -24,6 +24,18 @@ class SmartCoach {
 
     final lines = <CoachLine>[];
 
+    // Pain signal — promote it near the top so the user sees it first.
+    final hotPains = storage.hotPainAreas();
+    if (hotPains.isNotEmpty) {
+      final spotlight = hotPains.first;
+      final lvl = storage.painToday[spotlight];
+      lines.add(CoachLine(
+          emoji: '🩹',
+          text: lvl != null
+              ? '${spotlight.label} pain at $lvl/10 — try targeted mobility today.'
+              : '${spotlight.label} has been flagged this week — relief flow recommended.'));
+    }
+
     // Streak vibe.
     if (streak >= 14) {
       lines.add(CoachLine(
