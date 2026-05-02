@@ -634,6 +634,194 @@ class _YesterdayRecapCard extends StatelessWidget {
   }
 }
 
+class _MoodCheckInCard extends StatefulWidget {
+  final Storage storage;
+  final DateTime now;
+  final VoidCallback onLogged;
+  const _MoodCheckInCard({
+    required this.storage,
+    required this.now,
+    required this.onLogged,
+  });
+
+  @override
+  State<_MoodCheckInCard> createState() => _MoodCheckInCardState();
+}
+
+class _MoodCheckInCardState extends State<_MoodCheckInCard> {
+  static const _emojis = ['😞', '😕', '😐', '🙂', '😄'];
+  static const _labels = ['Low', 'Meh', 'OK', 'Good', 'Great'];
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final latest = widget.storage.latestMoodCheckIn;
+    final freshHours = latest == null
+        ? double.infinity
+        : widget.now.difference(latest.at).inMinutes / 60.0;
+    final isFresh = freshHours < 4;
+    final showPicker = _expanded || !isFresh;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: scheme.outline.withValues(alpha: 0.10),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFAB47BC).withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('😊', style: TextStyle(fontSize: 18)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isFresh
+                          ? 'Mood logged ${_freshLabel(freshHours)}'
+                          : 'How do you feel right now?',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isFresh && latest != null
+                          ? '${_emojis[latest.level - 1]} ${_labels[latest.level - 1]}'
+                          : 'Tap one — it shapes the recommendations.',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isFresh)
+                IconButton(
+                  iconSize: 18,
+                  visualDensity: VisualDensity.compact,
+                  tooltip: _expanded ? 'Hide' : 'Re-log',
+                  icon: Icon(_expanded
+                      ? Icons.keyboard_arrow_up
+                      : Icons.refresh_rounded),
+                  onPressed: () =>
+                      setState(() => _expanded = !_expanded),
+                ),
+            ],
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 220),
+            crossFadeState: showPicker
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  for (int i = 0; i < _emojis.length; i++)
+                    _MoodEmojiButton(
+                      emoji: _emojis[i],
+                      selected: latest?.level == i + 1,
+                      onTap: () async {
+                        HapticFeedback.selectionClick();
+                        await widget.storage.logMoodCheckIn(i + 1);
+                        if (!mounted) return;
+                        setState(() => _expanded = false);
+                        widget.onLogged();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            duration: const Duration(seconds: 2),
+                            content: Text(
+                                'Logged ${_emojis[i]} ${_labels[i]}'),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+            secondChild: const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _freshLabel(double hours) {
+    if (hours < 0.5) return 'just now';
+    if (hours < 1) return '${(hours * 60).round()} min ago';
+    return '${hours.toStringAsFixed(0)}h ago';
+  }
+}
+
+class _MoodEmojiButton extends StatelessWidget {
+  final String emoji;
+  final bool selected;
+  final VoidCallback onTap;
+  const _MoodEmojiButton({
+    required this.emoji,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 52,
+          height: 52,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected
+                ? const Color(0xFFAB47BC).withValues(alpha: 0.22)
+                : scheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: selected
+                  ? const Color(0xFFAB47BC)
+                  : Colors.transparent,
+              width: 1.6,
+            ),
+          ),
+          child: Text(emoji, style: const TextStyle(fontSize: 26)),
+        ),
+      ),
+    );
+  }
+}
+
 class _Header extends StatelessWidget {
   final String greeting;
   final String dateLabel;
