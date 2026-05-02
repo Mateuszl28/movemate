@@ -50,6 +50,8 @@ class HomeScreen extends StatelessWidget {
         dailyGoalMinutes: storage.dailyGoalMinutes);
     final coachLines = SmartCoach.dailySummary(storage, now: now);
     final mantra = DailyMantra.forDate(now, profile: storage.profile);
+    final plan = AdaptivePlan.build(storage, from: now);
+    final today = plan.days.first;
 
     final cards = <Widget>[
       _Header(
@@ -91,6 +93,25 @@ class HomeScreen extends StatelessWidget {
             score: score, todayMinutes: todayMin, goalMinutes: goal),
       ),
       _SmartCoachCard(lines: coachLines, mantra: mantra),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SectionTitle(
+            title: 'Today\'s plan · ${today.theme}',
+            hint: 'Day 1 of your adaptive 7-day plan.',
+          ),
+          const SizedBox(height: 12),
+          _PlanDayCard(
+            day: today,
+            onStart: () => _startPlan(context, today.plan),
+            onSeeAll: () {
+              Navigator.of(context).push(FadeThroughRoute(
+                builder: (_) => WeeklyPlanScreen(storage: storage),
+              ));
+            },
+          ),
+        ],
+      ),
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1404,6 +1425,145 @@ class _StreakRescueBanner extends StatelessWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PlanDayCard extends StatelessWidget {
+  final AdaptiveDay day;
+  final VoidCallback onStart;
+  final VoidCallback onSeeAll;
+  const _PlanDayCard({
+    required this.day,
+    required this.onStart,
+    required this.onSeeAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final accent = day.plan.primaryCategory.accent;
+    return PressableCard(
+      borderRadius: 22,
+      onTap: onStart,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(16, 14, 14, 14),
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: accent.withValues(alpha: 0.45), width: 1.4),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(day.plan.primaryCategory.icon,
+                      color: accent, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: accent,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('TODAY',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.0,
+                                )),
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(day.theme,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: accent,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(day.plan.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 16)),
+                      const SizedBox(height: 2),
+                      Text(day.reason,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 12,
+                              height: 1.3)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(day.plan.formattedDuration,
+                      style: TextStyle(
+                          color: accent,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 11)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: accent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: onStart,
+                    child: const Text('Start today',
+                        style: TextStyle(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                TextButton.icon(
+                  icon: const Icon(Icons.calendar_view_week, size: 18),
+                  label: const Text('See week'),
+                  onPressed: onSeeAll,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
