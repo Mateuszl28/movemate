@@ -94,6 +94,7 @@ class HomeScreen extends StatelessWidget {
         child: _WellnessScoreCard(
             score: score, todayMinutes: todayMin, goalMinutes: goal),
       ),
+      if (pride != null) _MomentOfPrideCard(pride: pride),
       _SmartCoachCard(lines: coachLines, mantra: mantra),
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
