@@ -237,10 +237,13 @@ lib/
   models.dart                Exercise, WorkoutPlan, SessionRecord, BodyArea, ...
 
   # Dashboard + tools
-  home_screen.dart           Dashboard (TodayCard, score, pride, coach, plan, recommended)
+  home_screen.dart           Dashboard (progress ring header, quick actions, hot pain alert,
+                             today card, score, pride, coach, plan, yesterday recap, mood log)
   tools_screen.dart          Adaptive plan + wellness strip + categories + plans
-  history_screen.dart        Stats, calendar, heatmaps, body coverage radar, mood line, records
-  settings_screen.dart       Profile, goals, reminders (with test-fire), quiet hours, voice, backup
+  history_screen.dart        Stats, calendar, heatmaps, body coverage radar, mood line,
+                             achievements with progress bars, records
+  settings_screen.dart       Profile, goals, reminders (with test-fire), quiet hours,
+                             voice (with preview), backup
 
   # Active sessions
   session_screen.dart        Plan-driven workout runner with TTS, mood capture,
