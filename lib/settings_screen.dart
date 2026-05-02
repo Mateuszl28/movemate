@@ -57,6 +57,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return '$hh:00';
   }
 
+  Future<void> _exportData() async {
+    final json = widget.storage.exportAll();
+    final dir = await getTemporaryDirectory();
+    final now = DateTime.now();
+    final stamp =
+        '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}';
+    final filename = 'movemate_backup_$stamp.json';
+    final file = File('${dir.path}/$filename');
+    await file.writeAsString(json);
+    await Share.shareXFiles(
+      [XFile(file.path, mimeType: 'application/json', name: filename)],
+      text: 'MoveMate backup · $stamp',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -313,6 +328,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               title: 'Data',
               child: Column(
                 children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Backup data'),
+                    subtitle: const Text(
+                        'Share a JSON dump of every setting, session, and log.'),
+                    trailing: const Icon(Icons.ios_share),
+                    onTap: _exportData,
+                  ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Clear session history'),
