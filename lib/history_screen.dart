@@ -114,6 +114,11 @@ class HistoryScreen extends StatelessWidget {
             const SizedBox(height: 12),
             _InsightsCard(bullets: insights.bullets),
             const SizedBox(height: 24),
+            ConsistencyHeatmap(
+              minutesByDay: heatmapData,
+              dailyGoal: storage.dailyGoalMinutes,
+            ),
+            const SizedBox(height: 18),
             Text('Activity (28 days)',
                 style: Theme.of(context)
                     .textTheme
