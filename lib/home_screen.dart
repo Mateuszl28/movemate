@@ -53,6 +53,7 @@ class HomeScreen extends StatelessWidget {
     final mantra = DailyMantra.forDate(now, profile: storage.profile);
     final plan = AdaptivePlan.build(storage, from: now);
     final today = plan.days.first;
+    final pride = MomentOfPride.compute(storage, now: now);
 
     final cards = <Widget>[
       _Header(
