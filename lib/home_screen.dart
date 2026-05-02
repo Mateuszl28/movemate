@@ -349,6 +349,73 @@ class _Header extends StatelessWidget {
   }
 }
 
+class _GoalRingPainter extends CustomPainter {
+  final double progress;
+  final Color trackColor;
+  final Color fillColor;
+  final bool glow;
+  _GoalRingPainter({
+    required this.progress,
+    required this.trackColor,
+    required this.fillColor,
+    required this.glow,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final stroke = 5.0;
+    final radius = (size.shortestSide - stroke) / 2;
+    final center = Offset(size.width / 2, size.height / 2);
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    if (glow) {
+      canvas.drawCircle(
+          center,
+          radius + 4,
+          Paint()
+            ..color = fillColor.withValues(alpha: 0.35)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
+    }
+
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..color = trackColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = stroke,
+    );
+
+    if (progress > 0) {
+      canvas.drawArc(
+        rect,
+        -1.5708, // -pi/2 — start at 12 o'clock
+        progress * 6.2832,
+        false,
+        Paint()
+          ..shader = SweepGradient(
+            startAngle: 0,
+            endAngle: progress * 6.2832,
+            colors: [
+              fillColor.withValues(alpha: 0.6),
+              fillColor,
+            ],
+            transform: const GradientRotation(-1.5708),
+          ).createShader(rect)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = stroke
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GoalRingPainter old) =>
+      old.progress != progress ||
+      old.fillColor != fillColor ||
+      old.glow != glow;
+}
+
 class _SectionTitle extends StatelessWidget {
   final String title;
   final String hint;
