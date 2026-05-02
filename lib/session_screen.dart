@@ -158,6 +158,13 @@ class _SessionScreenState extends State<SessionScreen>
     await _tts.speak('Well done! Session complete.');
 
     if (!mounted) return;
+    if (shouldWindDown(
+      category: widget.plan.primaryCategory.name,
+      seconds: widget.plan.totalSeconds,
+    )) {
+      await showWindDown(context, cycles: 4);
+      if (!mounted) return;
+    }
     final ma = await askForMood(
       context,
       title: 'How do you feel now?',
