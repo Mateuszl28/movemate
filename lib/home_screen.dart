@@ -59,6 +59,11 @@ class HomeScreen extends StatelessWidget {
     final plan = AdaptivePlan.build(storage, from: now);
     final today = plan.days.first;
     final pride = MomentOfPride.compute(storage, now: now);
+    final hotAreas = storage.hotPainAreas();
+    final hotArea = hotAreas.isNotEmpty
+        ? _mostPainfulArea(storage, hotAreas)
+        : null;
+    final yesterdayStats = _yesterdayStats(storage.sessions, now);
 
     final cards = <Widget>[
       _Header(
@@ -68,6 +73,22 @@ class HomeScreen extends StatelessWidget {
           freezes: freezes,
           todayMinutes: todayMin,
           goalMinutes: goal),
+      _QuickActionsRow(
+        storage: storage,
+        onSessionComplete: onSessionComplete,
+      ),
+      if (hotArea != null)
+        _HotPainAlert(
+          area: hotArea.area,
+          level: hotArea.level,
+          onSoothe: () {
+            final plan = ExerciseLibrary.buildQuickPlanForArea(
+              hotArea.area,
+              targetSeconds: 180,
+            );
+            _startPlan(context, plan);
+          },
+        ),
       _StreakRescueBanner(
         storage: storage,
         now: now,
