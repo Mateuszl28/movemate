@@ -350,6 +350,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ],
                       ),
                       subtitle: Text(p.description),
+                      secondary: IconButton(
+                        tooltip: 'Hear ${p.label}',
+                        icon: const Icon(Icons.volume_up_rounded),
+                        onPressed: () => _previewVoice(p),
+                      ),
                       contentPadding: EdgeInsets.zero,
                     ),
                 ],
