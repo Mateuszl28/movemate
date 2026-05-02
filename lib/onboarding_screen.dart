@@ -20,6 +20,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _page = 0;
   ActivityProfile _profile = ActivityProfile.sedentary;
   int _goal = 10;
+  final Map<BodyArea, int> _initialPain = {};
+  static const int _pageCount = 4;
 
   @override
   void dispose() {
