@@ -402,15 +402,18 @@ class _MoodTrendCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 80,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                for (final s in last)
-                  Expanded(
-                    child: _MoodBar(delta: s.moodDelta!),
-                  ),
-              ],
+            height: 110,
+            child: CustomPaint(
+              painter: _MoodLinePainter(
+                deltas: last.map((s) => s.moodDelta!).toList(),
+                positive: const Color(0xFF2EB872),
+                negative: const Color(0xFFE57373),
+                axisColor:
+                    scheme.outlineVariant.withValues(alpha: 0.7),
+                neutralLabel:
+                    scheme.onSurfaceVariant.withValues(alpha: 0.65),
+              ),
+              child: const SizedBox.expand(),
             ),
           ),
           const SizedBox(height: 6),
@@ -433,84 +436,132 @@ class _MoodTrendCard extends StatelessWidget {
   }
 }
 
-class _MoodBar extends StatelessWidget {
-  final int delta;
-  const _MoodBar({required this.delta});
+class _MoodLinePainter extends CustomPainter {
+  final List<int> deltas;
+  final Color positive;
+  final Color negative;
+  final Color axisColor;
+  final Color neutralLabel;
+
+  _MoodLinePainter({
+    required this.deltas,
+    required this.positive,
+    required this.negative,
+    required this.axisColor,
+    required this.neutralLabel,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final positive = delta > 0;
-    final neutral = delta == 0;
-    final color = positive
-        ? const Color(0xFF2EB872)
-        : neutral
-            ? scheme.onSurfaceVariant.withValues(alpha: 0.55)
-            : const Color(0xFFE57373);
-    // Bar height represents |delta| in 0..4 range from a 30px center axis.
-    final magnitude = delta.abs().clamp(0, 4);
-    final h = magnitude == 0 ? 6.0 : 8.0 + magnitude * 7.0;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      child: Column(
-        children: [
-          Expanded(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: positive
-                  ? TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: h),
-                      duration: const Duration(milliseconds: 500),
-                      builder: (_, val, _) => Container(
-                        height: val,
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(6)),
-                        ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ),
-          Container(
-            height: 2,
-            margin: const EdgeInsets.symmetric(vertical: 2),
-            color: scheme.outlineVariant,
-          ),
-          Expanded(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: !positive && !neutral
-                  ? TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 0.0, end: h),
-                      duration: const Duration(milliseconds: 500),
-                      builder: (_, val, _) => Container(
-                        height: val,
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: const BorderRadius.vertical(
-                              bottom: Radius.circular(6)),
-                        ),
-                      ),
-                    )
-                  : neutral
-                      ? Container(
-                          margin: const EdgeInsets.only(top: 2),
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-            ),
-          ),
-        ],
-      ),
+  void paint(Canvas canvas, Size size) {
+    if (deltas.isEmpty) return;
+    const maxRange = 4.0; // mood delta range -4..+4
+    final w = size.width;
+    final h = size.height;
+    final mid = h / 2;
+    final stepX = deltas.length > 1 ? w / (deltas.length - 1) : w / 2;
+
+    Offset pointAt(int i) {
+      final v = deltas[i].clamp(-4, 4).toDouble() / maxRange;
+      final x = deltas.length > 1 ? stepX * i : w / 2;
+      final y = mid - v * (mid * 0.85);
+      return Offset(x, y);
+    }
+
+    // Center axis.
+    final axisPaint = Paint()
+      ..color = axisColor
+      ..strokeWidth = 1.2;
+    final dash = 8.0, gap = 6.0;
+    double dx = 0;
+    while (dx < w) {
+      canvas.drawLine(Offset(dx, mid), Offset((dx + dash).clamp(0, w), mid), axisPaint);
+      dx += dash + gap;
+    }
+
+    // Build the smooth path through points.
+    final points = List<Offset>.generate(deltas.length, pointAt);
+    final linePath = Path()..moveTo(points.first.dx, points.first.dy);
+    for (int i = 0; i < points.length - 1; i++) {
+      final p0 = points[i];
+      final p1 = points[i + 1];
+      final mx = (p0.dx + p1.dx) / 2;
+      // Quadratic to mid, then to next — yields smooth curves.
+      linePath.quadraticBezierTo(p0.dx, p0.dy, mx, (p0.dy + p1.dy) / 2);
+      linePath.quadraticBezierTo(p1.dx, p1.dy, p1.dx, p1.dy);
+    }
+
+    // Compose two fill paths, one above midline and one below, clipped at mid.
+    void fillRegion({required bool above}) {
+      final fillPath = Path.from(linePath);
+      fillPath.lineTo(points.last.dx, mid);
+      fillPath.lineTo(points.first.dx, mid);
+      fillPath.close();
+      canvas.save();
+      if (above) {
+        canvas.clipRect(Rect.fromLTWH(0, 0, w, mid));
+      } else {
+        canvas.clipRect(Rect.fromLTWH(0, mid, w, mid));
+      }
+      final color = above ? positive : negative;
+      final paint = Paint()
+        ..shader = LinearGradient(
+          begin: above ? Alignment.topCenter : Alignment.bottomCenter,
+          end: above ? Alignment.bottomCenter : Alignment.topCenter,
+          colors: [
+            color.withValues(alpha: 0.45),
+            color.withValues(alpha: 0.05),
+          ],
+        ).createShader(Rect.fromLTWH(0, 0, w, h));
+      canvas.drawPath(fillPath, paint);
+      canvas.restore();
+    }
+    fillRegion(above: true);
+    fillRegion(above: false);
+
+    // Stroke the line itself.
+    final strokeAbove = Paint()
+      ..color = positive
+      ..strokeWidth = 2.4
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+    final strokeBelow = Paint()
+      ..color = negative
+      ..strokeWidth = 2.4
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+    // Draw line in segments so above/below colours stay correct.
+    for (int i = 0; i < points.length - 1; i++) {
+      final p0 = points[i];
+      final p1 = points[i + 1];
+      final paint = (p0.dy + p1.dy) / 2 <= mid ? strokeAbove : strokeBelow;
+      canvas.drawLine(p0, p1, paint);
+    }
+
+    // Latest-point dot.
+    final last = points.last;
+    final lastDelta = deltas.last;
+    final dotColor = lastDelta > 0
+        ? positive
+        : lastDelta < 0
+            ? negative
+            : neutralLabel;
+    canvas.drawCircle(last, 7, Paint()..color = dotColor.withValues(alpha: 0.30));
+    canvas.drawCircle(last, 4, Paint()..color = dotColor);
+    canvas.drawCircle(
+      last,
+      4,
+      Paint()
+        ..color = Colors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
     );
   }
+
+  @override
+  bool shouldRepaint(covariant _MoodLinePainter old) =>
+      old.deltas != deltas;
 }
 
 class _InsightsCard extends StatelessWidget {
