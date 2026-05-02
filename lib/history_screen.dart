@@ -942,7 +942,7 @@ class _AchievementsSection extends StatelessWidget {
             crossAxisCount: 4,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio: 0.92,
+            childAspectRatio: 0.78,
             children: [
               for (final a in items)
                 _BadgeTile(
