@@ -278,7 +278,7 @@ lib/
   insights.dart              Weekly insights aggregation
   daily_challenge.dart       Day-seeded challenge generator
   daily_mantra.dart          Day-seeded mantra
-  achievements.dart          18 achievement definitions + check engine
+  achievements.dart          18 achievement definitions + check engine + per-badge progress
 
   # Services
   notification_service.dart  TZ-aware reminders, quiet-hours filter, showTestNow
