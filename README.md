@@ -92,7 +92,9 @@ account.
 - **Streak with freezes** — protection days earned every 7-day milestone;
   evening rescue banner if today is empty
 - **18 achievements** with a confetti-firing celebration dialog (pulsing
-  trophy, gradient backdrop, per-badge bounce-in animation)
+  trophy, gradient backdrop, per-badge bounce-in animation) and **per-badge
+  progress bars** showing how close you are to locked ones (e.g. "5/7 days",
+  "120/200 min")
 - **Daily goal celebration** — when a session crosses your daily-minutes
   goal, a green confetti dialog fires once per day
 - **Streak milestone celebrations** — dedicated dialog at 7 / 14 / 30 / 60 /
@@ -100,6 +102,23 @@ account.
 - **Weekly review** — Monday auto-popup summarising the prior week
 - **Weekly recap share image** — 1080×1920 portrait recap card (totals,
   day-by-day bar chart, streak, top focus, mood) shareable from Progress
+
+### 🏠 Home dashboard
+- **Daily progress ring** in the header — animated circular ring around the
+  app icon showing today's minutes vs daily goal as a percentage; turns
+  green with a checkmark + glow when the goal is hit
+- **Quick action chips row** — horizontally scrollable colored pills under
+  the header (Pain · Eye break · Walk · Breathe · Mindful) for one-tap
+  navigation to the most-used tools
+- **Hot pain alert banner** — gradient red-to-orange banner that surfaces
+  whenever `storage.hotPainAreas()` reports anything ≥ 4/10. Shows the most
+  painful area with a "Soothe" CTA that builds a tailored 3-minute relief
+  session via `ExerciseLibrary.buildQuickPlanForArea`
+- **Yesterday recap card** — compact inline card between Today's Plan and
+  Recommended showing yesterday's minutes, session count, top category and
+  mood-delta chip; only appears when yesterday had at least one session
+- **Moment of Pride hero** — celebratory card that picks the user's best
+  recent signal and presents it with a per-kind gradient
 
 ### 📊 Progress visualisations
 - **30-day daily-minutes heatmap** — classic month grid
