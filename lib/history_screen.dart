@@ -24,6 +24,7 @@ class HistoryScreen extends StatelessWidget {
     final today = storage.todayMinutes;
     final streak = storage.currentStreak;
     final mapData = storage.minutesByDay(days: 28);
+    final heatmapData = storage.minutesByDay(days: 91);
     final earned = AchievementCatalog.earned(
       sessions,
       streak,
