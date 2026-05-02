@@ -249,6 +249,7 @@ class AchievementCatalog {
       description: 'Five grounding moments in a week.',
       emoji: '✨',
       check: (s) => s.mindfulWeek >= 5,
+      progress: (s) => (s.mindfulWeek.clamp(0, 5), 5),
     ),
   ];
 
