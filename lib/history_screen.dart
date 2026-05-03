@@ -10,6 +10,7 @@ import 'energy_hours.dart';
 import 'insights.dart';
 import 'models.dart';
 import 'movement_dna.dart';
+import 'notes_journal_screen.dart';
 import 'records.dart';
 import 'storage.dart';
 import 'transitions.dart';
