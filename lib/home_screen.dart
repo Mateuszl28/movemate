@@ -2271,6 +2271,26 @@ class _SmartCoachCard extends StatelessWidget {
                           height: 1.3,
                           color: scheme.onPrimaryContainer)),
                 ),
+                const SizedBox(width: 6),
+                InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () async {
+                    HapticFeedback.lightImpact();
+                    try {
+                      await shareDailyMantra(
+                          context, mantra, DateTime.now());
+                    } catch (_) {/* swallow — share can be cancelled */}
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Icon(
+                      Icons.ios_share_rounded,
+                      size: 16,
+                      color: scheme.onPrimaryContainer
+                          .withValues(alpha: 0.75),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
