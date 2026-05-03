@@ -2135,6 +2135,83 @@ class _MomentOfPrideCard extends StatelessWidget {
   }
 }
 
+/// "What's working" — green/teal card listing 1–3 positive observations
+/// derived from recent activity. Hides when there's nothing celebratory yet.
+class _WhatsWorkingCard extends StatelessWidget {
+  final List<WorkingObservation> observations;
+  const _WhatsWorkingCard({required this.observations});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF26A69A).withValues(alpha: 0.16),
+            const Color(0xFF2EB872).withValues(alpha: 0.10),
+          ],
+        ),
+        border: Border.all(
+            color: const Color(0xFF26A69A).withValues(alpha: 0.30),
+            width: 1.4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF26A69A).withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text('🌿', style: TextStyle(fontSize: 16)),
+              ),
+              const SizedBox(width: 10),
+              Text("What's working",
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                      color: scheme.onSurface)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (int i = 0; i < observations.length; i++)
+            Padding(
+              padding: EdgeInsets.only(
+                  bottom: i == observations.length - 1 ? 0 : 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(observations[i].emoji,
+                      style: const TextStyle(fontSize: 18)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      observations[i].text,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Coach lines + the day's mantra collapsed into one card. Mantra is rendered
 /// as a slim header strip; coach lines fill the body.
 class _SmartCoachCard extends StatelessWidget {
