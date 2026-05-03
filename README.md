@@ -97,6 +97,10 @@ account.
   fill above the zero baseline and red fill below
 - **Hydration** — daily glass goal with a single-tap pill
 - **Daily challenge + daily mantra** — generated from the date
+- **Mantra share card** — the daily mantra on the Smart Coach card has a
+  one-tap share button that renders a 1080×1920 portrait quote PNG (gradient
+  background, big emoji, mantra text, dated footer) and pushes it to the
+  system share sheet — a daily affirmation you can post or save
 
 ### 🏆 Engagement
 - **Streak with freezes** — protection days earned every 7-day milestone;
