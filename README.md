@@ -7,7 +7,7 @@
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.11%2B-02569B?logo=flutter)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.11%2B-0175C2?logo=dart)](https://dart.dev)
-[![Tests](https://img.shields.io/badge/tests-29%20passing-2EB872)](#testing)
+[![Tests](https://img.shields.io/badge/tests-33%20passing-2EB872)](#testing)
 [![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android)](https://android.com)
 
 ---
