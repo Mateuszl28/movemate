@@ -99,6 +99,16 @@ class HistoryScreen extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 IconButton.filledTonal(
+                  icon: const Icon(Icons.menu_book_outlined),
+                  tooltip: 'Notes journal',
+                  onPressed: () {
+                    Navigator.of(context).push(FadeThroughRoute(
+                      builder: (_) => NotesJournalScreen(storage: storage),
+                    ));
+                  },
+                ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
                   icon: const Icon(Icons.calendar_month),
                   tooltip: 'Open calendar',
                   onPressed: () {
