@@ -281,6 +281,7 @@ lib/
   smart_coach.dart           Coach lines for the dashboard
   adaptive_plan.dart         7-day plan generator
   moment_of_pride.dart       Ranked picker for the celebration hero
+  whats_working.dart         Picks 1–3 positive observations from recent activity
   records.dart               Lifetime PersonalRecords
   wellness_score.dart        Composite Streak/Variety/Volume/Today score
   movement_dna.dart          Activity-mix profiling
