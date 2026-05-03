@@ -333,6 +333,7 @@ test/
   storage_test.dart          Pain / sleep / quiet-hours storage round-trips
   demo_seeder_test.dart      Demo snapshot shape + downstream effects
   moment_of_pride_test.dart  Pride algorithm priority + selection rules
+  whats_working_test.dart    What's-Working observation picker (rhythm, pain drop, cap)
 
 .github/workflows/
   ci.yml                     Flutter analyze + test on push / PR
