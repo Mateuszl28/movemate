@@ -47,6 +47,10 @@ account.
 - **Moment of Pride** — ranked picker that surfaces the user's best recent
   signal (pain drop > streak > week growth > milestone > mood lift > variety
   > comeback) as a celebration hero on Home
+- **What's Working** — pure-function picker that scans the last 7–14 days
+  for positive observations (active-day rhythm, pain trending down, mood
+  lift, variety, week-over-week growth, morning energy spike) and returns
+  up to three for a green Home card
 - **Wellness Score** — composite index (Streak / Variety / Volume / Today)
   with a week-over-week delta
 - **Movement DNA + Energy Hours + Body Coverage** — analytics derived from
@@ -113,7 +117,9 @@ account.
 - **Hot pain alert banner** — gradient red-to-orange banner that surfaces
   whenever `storage.hotPainAreas()` reports anything ≥ 4/10. Shows the most
   painful area with a "Soothe" CTA that builds a tailored 3-minute relief
-  session via `ExerciseLibrary.buildQuickPlanForArea`
+  session via `ExerciseLibrary.buildQuickPlanForArea`. Includes an inline
+  7-day mini-sparkline and a dynamic blurb (Trending down · Climbing ·
+  Steady) so the trend is readable at a glance
 - **Yesterday recap card** — compact inline card between Today's Plan and
   Recommended showing yesterday's minutes, session count, top category and
   mood-delta chip; only appears when yesterday had at least one session
