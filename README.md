@@ -84,6 +84,11 @@ account.
 - **Sleep journal** — last night's hours and 1–5 quality, surfaces 7-day avg
 - **Energy check-in** — quick 1–5 emoji tap that influences recommendations
 - **Mood + notes** — captured per session
+- **Notes journal** — a dedicated screen (Progress → notes-book icon) listing
+  every session note with full-text **search** (highlighted matches),
+  date-grouped sections (Today / Yesterday / weekday / full date), the
+  category accent and mood-delta inline per entry — turns scattered notes
+  into a scannable diary
 - **Mood quick-log on Home** — standalone 5-emoji bar (😞 😕 😐 🙂 😄) that
   logs how you feel right now without starting a session; auto-collapses for
   4 hours after a fresh log, expands again when stale. With ≥ 3 check-ins
