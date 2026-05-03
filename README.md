@@ -86,7 +86,8 @@ account.
 - **Mood + notes** — captured per session
 - **Mood quick-log on Home** — standalone 5-emoji bar (😞 😕 😐 🙂 😄) that
   logs how you feel right now without starting a session; auto-collapses for
-  4 hours after a fresh log, expands again when stale
+  4 hours after a fresh log, expands again when stale. With ≥ 3 check-ins
+  in the last 7 days, an inline mini line-chart shows the trend
 - **Mood line chart** — smooth 14-session area chart on Progress with green
   fill above the zero baseline and red fill below
 - **Hydration** — daily glass goal with a single-tap pill
