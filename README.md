@@ -125,6 +125,10 @@ account.
   mood-delta chip; only appears when yesterday had at least one session
 - **Moment of Pride hero** — celebratory card that picks the user's best
   recent signal and presents it with a per-kind gradient
+- **What's Working card** — green/teal panel listing 1–3 positive
+  observations from the last week (active days, pain trending down, mood
+  lift, variety, +min vs last week, morning energy) — hides cleanly when
+  there's nothing celebratory to say
 
 ### 📊 Progress visualisations
 - **30-day daily-minutes heatmap** — classic month grid
