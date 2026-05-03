@@ -23,6 +23,7 @@ import 'walk_break_screen.dart';
 import 'weekly_plan_screen.dart';
 import 'wellness_detail_screen.dart';
 import 'wellness_score.dart';
+import 'whats_working.dart';
 
 /// Home is the daily dashboard — signals, recommendations, and what's pending.
 /// Anything action-oriented (categories, plans, builders, tools) lives in the
@@ -64,6 +65,7 @@ class HomeScreen extends StatelessWidget {
         ? _mostPainfulArea(storage, hotAreas)
         : null;
     final yesterdayStats = _yesterdayStats(storage.sessions, now);
+    final working = WhatsWorking.compute(storage, now: now);
 
     final cards = <Widget>[
       _Header(
@@ -81,6 +83,7 @@ class HomeScreen extends StatelessWidget {
         _HotPainAlert(
           area: hotArea.area,
           level: hotArea.level,
+          series: storage.painSeries(hotArea.area, days: 7),
           onSoothe: () {
             final plan = ExerciseLibrary.buildQuickPlanForArea(
               hotArea.area,
@@ -448,12 +451,37 @@ class _QuickActionPill extends StatelessWidget {
 class _HotPainAlert extends StatelessWidget {
   final BodyArea area;
   final int level;
+  final List<int?> series;
   final VoidCallback onSoothe;
   const _HotPainAlert({
     required this.area,
     required this.level,
+    required this.series,
     required this.onSoothe,
   });
+
+  String _trendBlurb() {
+    final readings = series.whereType<int>().toList();
+    if (readings.length < 2) {
+      return 'Targeted relief in 3 minutes — gentle on what hurts.';
+    }
+    final half = readings.length ~/ 2;
+    final firstHalf = readings.take(half).toList();
+    final secondHalf = readings.skip(half).toList();
+    if (firstHalf.isEmpty || secondHalf.isEmpty) {
+      return 'Targeted relief in 3 minutes — gentle on what hurts.';
+    }
+    final firstAvg = firstHalf.reduce((a, b) => a + b) / firstHalf.length;
+    final secondAvg =
+        secondHalf.reduce((a, b) => a + b) / secondHalf.length;
+    final delta = secondAvg - firstAvg;
+    if (delta <= -1.0) {
+      return 'Trending down — keep going. Relief in 3 min.';
+    } else if (delta >= 1.0) {
+      return 'Climbing — let\'s break the pattern. 3-min relief.';
+    }
+    return 'Steady this week — 3-min targeted relief is ready.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -474,68 +502,160 @@ class _HotPainAlert extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.22),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(area.emoji, style: const TextStyle(fontSize: 28)),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('${area.label} · $level/10',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                      height: 1.1,
-                    )),
-                const SizedBox(height: 2),
-                Text(
-                  'Targeted relief in 3 minutes — gentle on what hurts.',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
-                    height: 1.3,
+          Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child:
+                    Text(area.emoji, style: const TextStyle(fontSize: 28)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('${area.label} · $level/10',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 18,
+                          height: 1.1,
+                        )),
+                    const SizedBox(height: 2),
+                    Text(
+                      _trendBlurb(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: onSoothe,
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFFD84315),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-              ],
-            ),
+                child: const Text('Soothe',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w900, fontSize: 13)),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: onSoothe,
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFFD84315),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+          if (series.whereType<int>().length >= 2) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 36,
+              child: CustomPaint(
+                painter: _MiniSparklinePainter(
+                  values: series,
+                  maxVal: 10,
+                  fill: Colors.white.withValues(alpha: 0.95),
+                  baseline: Colors.white.withValues(alpha: 0.30),
+                ),
+                child: const SizedBox.expand(),
               ),
             ),
-            child: const Text('Soothe',
-                style:
-                    TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-          ),
+          ],
         ],
       ),
     );
   }
+}
+
+class _MiniSparklinePainter extends CustomPainter {
+  final List<int?> values;
+  final double maxVal;
+  final Color fill;
+  final Color baseline;
+  _MiniSparklinePainter({
+    required this.values,
+    required this.maxVal,
+    required this.fill,
+    required this.baseline,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final pts = <Offset>[];
+    final stepX = values.length > 1 ? w / (values.length - 1) : w / 2;
+    for (int i = 0; i < values.length; i++) {
+      final v = values[i];
+      if (v == null) continue;
+      final x = stepX * i;
+      final y = h - (v / maxVal) * h;
+      pts.add(Offset(x, y));
+    }
+    if (pts.isEmpty) return;
+
+    final basePaint = Paint()
+      ..color = baseline
+      ..strokeWidth = 1;
+    canvas.drawLine(Offset(0, h - 1), Offset(w, h - 1), basePaint);
+
+    final fillPath = Path()..moveTo(pts.first.dx, h);
+    for (final p in pts) {
+      fillPath.lineTo(p.dx, p.dy);
+    }
+    fillPath.lineTo(pts.last.dx, h);
+    fillPath.close();
+    canvas.drawPath(
+      fillPath,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            fill.withValues(alpha: 0.35),
+            fill.withValues(alpha: 0.05),
+          ],
+        ).createShader(Rect.fromLTWH(0, 0, w, h)),
+    );
+
+    final linePaint = Paint()
+      ..color = fill
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final linePath = Path()..moveTo(pts.first.dx, pts.first.dy);
+    for (int i = 1; i < pts.length; i++) {
+      linePath.lineTo(pts[i].dx, pts[i].dy);
+    }
+    canvas.drawPath(linePath, linePaint);
+
+    canvas.drawCircle(pts.last, 3.6, Paint()..color = fill);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MiniSparklinePainter old) =>
+      old.values != values;
 }
 
 class _YesterdayRecapCard extends StatelessWidget {
@@ -656,12 +776,15 @@ class _MoodCheckInCardState extends State<_MoodCheckInCard> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final latest = widget.storage.latestMoodCheckIn;
+    final all = widget.storage.moodCheckIns;
+    final latest = all.isEmpty ? null : all.last;
     final freshHours = latest == null
         ? double.infinity
         : widget.now.difference(latest.at).inMinutes / 60.0;
     final isFresh = freshHours < 4;
     final showPicker = _expanded || !isFresh;
+    final cutoff = widget.now.subtract(const Duration(days: 7));
+    final recent = all.where((m) => m.at.isAfter(cutoff)).toList();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -768,6 +891,39 @@ class _MoodCheckInCardState extends State<_MoodCheckInCard> {
             ),
             secondChild: const SizedBox(width: double.infinity),
           ),
+          if (recent.length >= 3 && !showPicker) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text('Last 7 days',
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                      letterSpacing: 0.8,
+                    )),
+                const SizedBox(width: 6),
+                Text('· ${recent.length} check-ins',
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                    )),
+              ],
+            ),
+            const SizedBox(height: 4),
+            SizedBox(
+              height: 36,
+              child: CustomPaint(
+                painter: _MoodTrendPainter(
+                  levels: recent.map((m) => m.level).toList(),
+                  positive: const Color(0xFFAB47BC),
+                  axisColor: scheme.outline.withValues(alpha: 0.30),
+                ),
+                child: const SizedBox.expand(),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -820,6 +976,62 @@ class _MoodEmojiButton extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MoodTrendPainter extends CustomPainter {
+  final List<int> levels;
+  final Color positive;
+  final Color axisColor;
+  _MoodTrendPainter({
+    required this.levels,
+    required this.positive,
+    required this.axisColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (levels.isEmpty) return;
+    final w = size.width;
+    final h = size.height;
+    final stepX = levels.length > 1 ? w / (levels.length - 1) : w / 2;
+    Offset pointAt(int i) {
+      final v = (levels[i] - 1) / 4.0; // 1..5 → 0..1
+      final x = levels.length > 1 ? stepX * i : w / 2;
+      final y = h - v * (h - 6) - 3;
+      return Offset(x, y);
+    }
+
+    final pts = List<Offset>.generate(levels.length, pointAt);
+    final baselinePaint = Paint()
+      ..color = axisColor
+      ..strokeWidth = 1;
+    canvas.drawLine(Offset(0, h - 1), Offset(w, h - 1), baselinePaint);
+
+    final linePaint = Paint()
+      ..color = positive
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeJoin = StrokeJoin.round
+      ..strokeCap = StrokeCap.round;
+    final path = Path()..moveTo(pts.first.dx, pts.first.dy);
+    for (int i = 1; i < pts.length; i++) {
+      path.lineTo(pts[i].dx, pts[i].dy);
+    }
+    canvas.drawPath(path, linePaint);
+
+    for (int i = 0; i < pts.length; i++) {
+      final r = i == pts.length - 1 ? 3.6 : 2.4;
+      canvas.drawCircle(
+        pts[i],
+        r,
+        Paint()..color = positive.withValues(alpha: i == pts.length - 1 ? 1.0 : 0.6),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _MoodTrendPainter old) =>
+      old.levels != levels;
 }
 
 class _Header extends StatelessWidget {
