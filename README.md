@@ -312,6 +312,8 @@ lib/
   share_card.dart            Render shareable PNG of a session
   pain_report_card.dart      30-day pain report PNG (1080×1920) for physiotherapist
   weekly_recap_card.dart     Weekly recap PNG (1080×1920) for social share
+  mantra_share_card.dart     Daily mantra PNG (1080×1920) — quote-card share
+  notes_journal_screen.dart  Searchable, date-grouped journal of every session note
   demo_seeder.dart           Generate a 30-day realistic snapshot for demos
   wellness_detail_screen.dart  Score breakdown drill-down
   weekly_review.dart         Monday-morning weekly summary popup
