@@ -19,6 +19,7 @@ import 'smart_coach.dart';
 import 'storage.dart';
 import 'tools_screen.dart' show PressableCard;
 import 'transitions.dart';
+import 'mantra_share_card.dart';
 import 'walk_break_screen.dart';
 import 'weekly_plan_screen.dart';
 import 'wellness_detail_screen.dart';
