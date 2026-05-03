@@ -372,12 +372,14 @@ flutter test
 ```
 
 Coverage focuses on the algorithmic core (records, adaptive plan, storage,
-demo seeder, moment of pride). The 29 tests in `test/` are framework-light
-(`shared_preferences` is mocked via `setMockInitialValues`), run in under
-6 seconds, and exercise the interesting branches: streak gaps, day-sums,
-plan variation under sleep deficit and pain flags, quiet-hours wrap-around
-past midnight, demo seeder produces a healing trend, pride algorithm picks
-pain-drop over streak when both qualify, etc.
+demo seeder, moment of pride, what's-working). The 33 tests in `test/` are
+framework-light (`shared_preferences` is mocked via `setMockInitialValues`),
+run in under 6 seconds, and exercise the interesting branches: streak gaps,
+day-sums, plan variation under sleep deficit and pain flags, quiet-hours
+wrap-around past midnight, demo seeder produces a healing trend, pride
+algorithm picks pain-drop over streak when both qualify, what's-working
+flags 4+ active days and surfaces a back-pain trending-down observation,
+etc.
 
 The included **GitHub Actions workflow** (`.github/workflows/ci.yml`) runs
 `flutter analyze --no-fatal-infos` + `flutter test --reporter expanded` on
